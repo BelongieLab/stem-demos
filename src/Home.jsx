@@ -31,6 +31,18 @@ export default function Home() {
             </p>
           </Link>
 
+          <a 
+            href="/logarithms.html" 
+            className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-yellow-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
+          >
+            <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-yellow-400 transition-colors">
+              Visualizing Logarithms
+            </h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              A scrollytelling journey explaining exponents, Euler's number, and the additive superpower of logarithms.
+            </p>
+          </a>
+
           {/* Future demos will go here! */}
           
         </div>

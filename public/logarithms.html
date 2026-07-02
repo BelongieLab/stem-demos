@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizing Exponents & Logarithms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    <style>
+        body {
+            margin: 0;
+            background-color: #141414; /* 3B1B Dark */
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Fixed background canvas */
+        #viz-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none; /* Let clicks pass through to scroll area if needed */
+        }
+
+        /* Scrollytelling content */
+        #content {
+            position: relative;
+            z-index: 10;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 5%;
+        }
+
+        .step {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start; /* Align boxes to the left */
+        }
+
+        .step-content {
+            background: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            max-width: 450px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            transform: translateY(50px);
+            opacity: 0;
+            transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .step.is-active .step-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Math typography enhancements */
+        h2 {
+            color: #E0E0E0;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 1.75rem;
+        }
+        
+        p {
+            color: #B0B0B0;
+            line-height: 1.7;
+            margin-bottom: 1.2rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight-blue { color: #58C4DD; font-weight: bold; }
+        .highlight-yellow { color: #E2A246; font-weight: bold; }
+        .highlight-green { color: #83C167; font-weight: bold; }
+        .highlight-red { color: #FC6255; font-weight: bold; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #141414; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>
+</head>
+<body>
+
+    <!-- Canvas for Animations -->
+    <div id="viz-container">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <!-- Scrollytelling Narrative -->
+    <div id="content">
+        <!-- Spacer for initial scroll -->
+        <div style="height: 20vh;"></div>
+
+        <div class="step" data-step="0">
+            <div class="step-content">
+                <h2>The Architecture of Scaling</h2>
+                <p>Mathematics is often taught as a series of rules, but it's better understood as the study of transformations.</p>
+                <p>Consider the function <span class="highlight-blue">$y = 2^x$</span>. It tells a story of discrete, compounding growth. For every step you take to the right, the height doubles.</p>
+                <p>Notice how rapidly the curve shoots upward. Exponents are machines that turn steady forward movement into explosive upward movement.</p>
+            </div>
+        </div>
+
+        <div class="step" data-step="1">
+            <div class="step-content">
+                <h2>Continuous Growth: The Base $e$</h2>
+                <p>But the real world doesn't grow in rigid, discrete steps. A population doesn't instantly double at midnight; it grows continuously, proportionately to how much is already there.</p>
+                <p>Enter Euler's number, <span class="highlight-blue">$e \approx 2.718$</span>. The function <span class="highlight-blue">$y = e^x$</span> is incredibly special.</p>
+                <p>At any given point, the <span class="highlight-red">rate of growth (the slope)</span> is exactly equal to the <span class="highlight-green">amount of stuff (the height)</span>. It is the ultimate mathematical expression of natural growth.</p>
+            </div>
+        </div>
+
+        <div class="step" data-step="2">
+            <div class="step-content">
+                <h2>The Inverse Question</h2>
+                <p>To truly understand an operation, mathematicians ask the inverse question. Instead of asking "If I grow for $x$ time, what is my amount $y$?"...</p>
+                <p>We ask: "If I want to reach amount $y$, <span class="highlight-yellow">how much time $x$ do I need?</span>"</p>
+                <p>Geometrically, we are swapping our inputs and outputs. This is visualized by reflecting our universe across the diagonal line <span style="color:#888;">$y = x$</span>.</p>
+            </div>
+        </div>
+
+        <div class="step" data-step="3">
+            <div class="step-content">
+                <h2>Enter the Logarithm</h2>
+                <p>The reflection of the exponential curve forms a new function: The Natural Logarithm, <span class="highlight-yellow">$y = \ln(x)$</span>.</p>
+                <p>While exponents explode upward, logarithms flatten out. They are the exact opposite.</p>
+                <p>If you see a moving dot on the blue exponential curve at $(x, y)$, its twin on the yellow logarithm curve sits precisely at $(y, x)$. They are mirrors of each other.</p>
+            </div>
+        </div>
+
+        <div class="step" data-step="4">
+            <div class="step-content">
+                <h2>The Superpower: Addition from Multiplication</h2>
+                <p>Because logarithms represent "the time needed to grow to a certain size", they possess a magical property.</p>
+                <p>What happens if you want to grow 6 times larger? You could grow 2 times larger, and then from there, grow 3 times larger. The <em>time</em> it takes to do both is just the sum of the times!</p>
+                <p>Therefore: <span class="highlight-yellow">$\ln(2 \cdot 3) = \ln(2) + \ln(3)$</span>.</p>
+                <p>Logarithms translate the difficult language of multiplication into the simpler language of addition. They downgrade complexity.</p>
+            </div>
+        </div>
+        
+        <!-- Spacer at the bottom -->
+        <div style="height: 30vh;"></div>
+    </div>
+
+    <script>
+        /**
+         * 3B1B-style Animation Engine using HTML5 Canvas
+         */
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Colors (Manim Palette)
+        const COLORS = {
+            bg: '#141414',
+            grid: '#333333',
+            axes: '#777777',
+            blue: '#58C4DD',   // e^x
+            yellow: '#E2A246', // ln(x)
+            red: '#FC6255',    // Slope
+            green: '#83C167',  // Height
+            gray: '#888888',   // y=x line
+            white: '#FFFFFF'
+        };
+
+        // Math Coordinate System
+        // We want origin roughly center-bottom-left, showing primarily Q1
+        const MATH_BOUNDS = { xMin: -3, xMax: 10, yMin: -3, yMax: 10 };
+        
+        let width, height;
+        let pixelRatio = window.devicePixelRatio || 1;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width * pixelRatio;
+            canvas.height = height * pixelRatio;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            ctx.scale(pixelRatio, pixelRatio);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Coordinate Mapping Functions
+        function mapX(mathX) {
+            // Shift drawing area to the right so it doesn't overlap text on desktop
+            const viewWidth = width > 800 ? width * 0.5 : width;
+            const xOffset = width > 800 ? width * 0.45 : width * 0.1;
+            return xOffset + ((mathX - MATH_BOUNDS.xMin) / (MATH_BOUNDS.xMax - MATH_BOUNDS.xMin)) * viewWidth;
+        }
+
+        function mapY(mathY) {
+            // Y is inverted in canvas (0 is top)
+            const viewHeight = height * 0.8;
+            const yOffset = height * 0.1;
+            return height - (yOffset + ((mathY - MATH_BOUNDS.yMin) / (MATH_BOUNDS.yMax - MATH_BOUNDS.yMin)) * viewHeight);
+        }
+
+        // --- Animation State ---
+        // We use lerping to transition between states smoothly based on scroll
+        const state = {
+            base: 2,           // base of exponent (2 -> e)
+            showExp: 1,        // opacity of exponential curve
+            showTangent: 0,    // opacity of derivative visualization
+            showMirror: 0,     // opacity of y=x line
+            showLog: 0,        // opacity of log curve
+            showLogTwin: 0,    // opacity of connecting line between twin points
+            showAddition: 0,   // opacity of ln(2)+ln(3)=ln(6) visualization
+            time: 0            // continuous animation time for moving points
+        };
+
+        const targetState = { ...state };
+
+        // Scroll tracking via IntersectionObserver
+        const steps = document.querySelectorAll('.step');
+        let currentStep = 0;
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    currentStep = parseInt(entry.target.dataset.step);
+                    
+                    // Add active class for CSS transitions on text
+                    steps.forEach(s => s.classList.remove('is-active'));
+                    entry.target.classList.add('is-active');
+
+                    // Set target animation states based on the active step
+                    updateTargetStates(currentStep);
+                }
+            });
+        }, { threshold: 0.5 }); // Trigger when 50% of the text box is visible
+
+        steps.forEach(step => observer.observe(step));
+
+        function updateTargetStates(step) {
+            // Defaults
+            targetState.base = Math.E;
+            targetState.showExp = 1;
+            targetState.showTangent = 0;
+            targetState.showMirror = 0;
+            targetState.showLog = 0;
+            targetState.showLogTwin = 0;
+            targetState.showAddition = 0;
+
+            if (step === 0) {
+                targetState.base = 2;
+                targetState.showExp = 1;
+            } else if (step === 1) {
+                targetState.showTangent = 1;
+            } else if (step === 2) {
+                targetState.showMirror = 1;
+            } else if (step === 3) {
+                targetState.showMirror = 1;
+                targetState.showLog = 1;
+                targetState.showLogTwin = 1;
+            } else if (step === 4) {
+                targetState.showMirror = 0; // Fade out mirror to focus on log
+                targetState.showExp = 0.2;  // Dim exp
+                targetState.showLog = 1;
+                targetState.showLogTwin = 0;
+                targetState.showAddition = 1;
+            }
+        }
+
+        // --- Drawing Utilities ---
+
+        function drawAxesAndGrid() {
+            ctx.lineWidth = 1;
+            
+            // Grid
+            ctx.strokeStyle = COLORS.grid;
+            for (let i = Math.ceil(MATH_BOUNDS.xMin); i <= MATH_BOUNDS.xMax; i++) {
+                ctx.beginPath();
+                ctx.moveTo(mapX(i), mapY(MATH_BOUNDS.yMin));
+                ctx.lineTo(mapX(i), mapY(MATH_BOUNDS.yMax));
+                ctx.stroke();
+            }
+            for (let i = Math.ceil(MATH_BOUNDS.yMin); i <= MATH_BOUNDS.yMax; i++) {
+                ctx.beginPath();
+                ctx.moveTo(mapX(MATH_BOUNDS.xMin), mapY(i));
+                ctx.lineTo(mapX(MATH_BOUNDS.xMax), mapY(i));
+                ctx.stroke();
+            }
+
+            // Axes
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = COLORS.axes;
+            // X-axis
+            ctx.beginPath();
+            ctx.moveTo(mapX(MATH_BOUNDS.xMin), mapY(0));
+            ctx.lineTo(mapX(MATH_BOUNDS.xMax), mapY(0));
+            ctx.stroke();
+            // Y-axis
+            ctx.beginPath();
+            ctx.moveTo(mapX(0), mapY(MATH_BOUNDS.yMin));
+            ctx.lineTo(mapX(0), mapY(MATH_BOUNDS.yMax));
+            ctx.stroke();
+
+            // Ticks and Labels (Origin)
+            ctx.fillStyle = COLORS.axes;
+            ctx.font = '14px sans-serif';
+            ctx.fillText('0', mapX(-0.3), mapY(-0.3));
+            ctx.fillText('x', mapX(MATH_BOUNDS.xMax - 0.5), mapY(-0.3));
+            ctx.fillText('y', mapX(-0.5), mapY(MATH_BOUNDS.yMax - 0.5));
+        }
+
+        function drawFunction(fn, color, opacity, lineWidth = 3) {
+            if (opacity <= 0.01) return;
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.globalAlpha = opacity;
+            
+            const step = 0.05;
+            let first = true;
+            for (let x = MATH_BOUNDS.xMin; x <= MATH_BOUNDS.xMax; x += step) {
+                const y = fn(x);
+                if (y >= MATH_BOUNDS.yMin - 1 && y <= MATH_BOUNDS.yMax + 1) { // Optimize drawing outside bounds
+                    if (first) {
+                        ctx.moveTo(mapX(x), mapY(y));
+                        first = false;
+                    } else {
+                        ctx.lineTo(mapX(x), mapY(y));
+                    }
+                } else {
+                    first = true; // Break line if it goes way out of bounds
+                }
+            }
+            ctx.stroke();
+            ctx.globalAlpha = 1; // Reset
+        }
+
+        function drawDot(x, y, color, radius = 6) {
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.arc(mapX(x), mapY(y), radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Glow effect
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = color;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        function drawLine(x1, y1, x2, y2, color, opacity, dashed = false) {
+            if (opacity <= 0.01) return;
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = opacity;
+            if (dashed) ctx.setLineDash([5, 5]);
+            ctx.moveTo(mapX(x1), mapY(y1));
+            ctx.lineTo(mapX(x2), mapY(y2));
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.globalAlpha = 1;
+        }
+
+        function drawRect(x, y, w, h, color, opacity) {
+             if (opacity <= 0.01) return;
+             ctx.fillStyle = color;
+             ctx.globalAlpha = opacity;
+             // mapping: x, y is bottom left. w, h are in math coords.
+             // Because canvas Y is inverted, height mapping is tricky.
+             const px = mapX(x);
+             const py = mapY(y + h); // Top left y
+             const pw = mapX(x + w) - mapX(x);
+             const ph = mapY(y) - mapY(y + h); // Positive height in pixels
+             
+             ctx.fillRect(px, py, pw, ph);
+             // Outline
+             ctx.strokeStyle = COLORS.bg;
+             ctx.lineWidth = 2;
+             ctx.strokeRect(px, py, pw, ph);
+             ctx.globalAlpha = 1;
+        }
+
+        // --- Main Render Loop ---
+
+        function render() {
+            // 1. Update state (Lerp)
+            const lerpSpeed = 0.05;
+            state.base += (targetState.base - state.base) * lerpSpeed;
+            state.showExp += (targetState.showExp - state.showExp) * lerpSpeed;
+            state.showTangent += (targetState.showTangent - state.showTangent) * lerpSpeed;
+            state.showMirror += (targetState.showMirror - state.showMirror) * lerpSpeed;
+            state.showLog += (targetState.showLog - state.showLog) * lerpSpeed;
+            state.showLogTwin += (targetState.showLogTwin - state.showLogTwin) * lerpSpeed;
+            state.showAddition += (targetState.showAddition - state.showAddition) * lerpSpeed;
+            
+            // Continuous time for moving points
+            state.time += 0.015;
+
+            // 2. Clear Canvas
+            ctx.clearRect(0, 0, width, height);
+
+            // 3. Draw Background elements
+            drawAxesAndGrid();
+
+            // 4. Draw y = x Mirror Line
+            drawLine(MATH_BOUNDS.xMin, MATH_BOUNDS.xMin, MATH_BOUNDS.xMax, MATH_BOUNDS.xMax, COLORS.gray, state.showMirror, true);
+
+            // 5. Draw Exponential Curve: y = base^x
+            const expFn = (x) => Math.pow(state.base, x);
+            drawFunction(expFn, COLORS.blue, state.showExp);
+
+            // 6. Moving point on Exponential Curve
+            // Oscillate x between -1 and 2 smoothly
+            const movingX = Math.sin(state.time) * 1.5 + 0.5; 
+            const movingY = expFn(movingX);
+            
+            if (state.showExp > 0.1 && state.showAddition < 0.5) {
+                drawDot(movingX, movingY, COLORS.blue);
+                
+                // Show label
+                ctx.fillStyle = COLORS.blue;
+                ctx.font = '16px monospace';
+                ctx.globalAlpha = state.showExp;
+                ctx.fillText(`y=${state.base.toFixed(2)}^x`, mapX(movingX) - 60, mapY(movingY) - 15);
+                ctx.globalAlpha = 1;
+            }
+
+            // 7. Tangent & Height Visualization (The magic of 'e')
+            if (state.showTangent > 0.01) {
+                // Slope at x for base^x is ln(base) * base^x. 
+                // When base is e, slope is e^x.
+                const slope = Math.log(state.base) * Math.pow(state.base, movingX);
+                
+                // Tangent Line equation: y - y1 = m(x - x1)
+                const tangFn = (x) => slope * (x - movingX) + movingY;
+                
+                // Draw tangent line segment
+                ctx.beginPath();
+                ctx.strokeStyle = COLORS.red;
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = state.showTangent * 0.8;
+                ctx.moveTo(mapX(movingX - 1.5), mapY(tangFn(movingX - 1.5)));
+                ctx.lineTo(mapX(movingX + 1.5), mapY(tangFn(movingX + 1.5)));
+                ctx.stroke();
+
+                // Draw Height line (green)
+                drawLine(movingX, 0, movingX, movingY, COLORS.green, state.showTangent, true);
+                
+                // Labels
+                ctx.fillStyle = COLORS.green;
+                ctx.font = '14px sans-serif';
+                ctx.fillText(`Height = ${movingY.toFixed(2)}`, mapX(movingX) + 10, mapY(movingY / 2));
+                
+                ctx.fillStyle = COLORS.red;
+                ctx.fillText(`Slope = ${slope.toFixed(2)}`, mapX(movingX - 1), mapY(tangFn(movingX - 1)) - 10);
+                
+                ctx.globalAlpha = 1;
+            }
+
+            // 8. Draw Logarithmic Curve: y = log_base(x) -> equivalent to ln(x)/ln(base)
+            // Log is only defined for x > 0
+            const logFn = (x) => Math.log(x) / Math.log(state.base);
+            drawFunction(logFn, COLORS.yellow, state.showLog);
+
+            // 9. Twin Point Reflection Animation
+            if (state.showLogTwin > 0.01 && state.showAddition < 0.5) {
+                const twinX = movingY; // Swapped!
+                const twinY = movingX;
+                
+                // Draw connecting dashed line
+                drawLine(movingX, movingY, twinX, twinY, COLORS.gray, state.showLogTwin, true);
+                
+                // Draw twin dot
+                drawDot(twinX, twinY, COLORS.yellow);
+                
+                // Label
+                ctx.fillStyle = COLORS.yellow;
+                ctx.font = '16px monospace';
+                ctx.globalAlpha = state.showLogTwin;
+                ctx.fillText(`(y, x)`, mapX(twinX) + 15, mapY(twinY) + 5);
+                ctx.globalAlpha = 1;
+            }
+
+            // 10. The Magic Property: ln(2) + ln(3) = ln(6)
+            if (state.showAddition > 0.01) {
+                const v2 = 2;
+                const v3 = 3;
+                const v6 = 6;
+                const y2 = Math.log(v2);
+                const y3 = Math.log(v3);
+                const y6 = Math.log(v6);
+
+                // Draw dots on log curve
+                drawDot(v2, y2, COLORS.white, 4);
+                drawDot(v3, y3, COLORS.white, 4);
+                drawDot(v6, y6, COLORS.white, 4);
+
+                // Bar width
+                const bw = 0.4;
+
+                // Animate the stack based on showAddition (0 to 1)
+                // At 0: nothing.
+                // At 1: full visualization.
+                // We'll create a little sub-animation based on the showAddition progress.
+                
+                // Base bars on x-axis
+                drawRect(v2 - bw/2, 0, bw, y2, COLORS.blue, state.showAddition * 0.7);
+                drawRect(v3 - bw/2, 0, bw, y3, COLORS.green, state.showAddition * 0.7);
+
+                // Stacked bars at x=6
+                // The blue bar at the bottom
+                drawRect(v6 - bw/2, 0, bw, y2, COLORS.blue, state.showAddition * 0.7);
+                
+                // The green bar sliding down to stack on top
+                // It starts high up and slides down to y2.
+                // We map state.showAddition from [0.5, 1.0] to [y6, y2]
+                let stackY = y6; 
+                let stackOpacity = 0;
+                if (state.showAddition > 0.5) {
+                    const t = (state.showAddition - 0.5) * 2; // 0 to 1
+                    stackY = y6 - (y6 - y2) * t;
+                    stackOpacity = t * 0.7;
+                }
+                
+                // Note: The green bar's height is always y3. 
+                // We draw it starting at `stackY` (bottom) extending upwards by `y3`.
+                drawRect(v6 - bw/2, stackY, bw, y3, COLORS.green, stackOpacity);
+
+                // Labels
+                ctx.globalAlpha = state.showAddition;
+                ctx.fillStyle = COLORS.white;
+                ctx.font = 'bold 16px sans-serif';
+                ctx.textAlign = 'center';
+                
+                ctx.fillText(`ln(2)`, mapX(v2), mapY(-0.5));
+                ctx.fillText(`ln(3)`, mapX(v3), mapY(-0.5));
+                ctx.fillText(`ln(6) = ln(2) + ln(3)`, mapX(v6), mapY(-0.5));
+                
+                // Draw connecting dashed lines to y-axis to prove heights
+                drawLine(0, y2, v6, y2, COLORS.gray, state.showAddition * 0.5, true);
+                drawLine(0, y6, v6, y6, COLORS.gray, state.showAddition * 0.5, true);
+                
+                ctx.textAlign = 'left';
+                ctx.globalAlpha = 1;
+            }
+
+            requestAnimationFrame(render);
+        }
+
+        // Start animation loop
+        render();
+
+    </script>
+</body>
+</html>
