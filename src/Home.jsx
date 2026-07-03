@@ -43,8 +43,8 @@ export default function Home() {
             </p>
           </a>
 
-          <Link 
-            to="/pulleys" 
+          <a
+            href="/pulleys.html"
             className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-orange-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
           >
             <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-orange-400 transition-colors">
@@ -53,7 +53,7 @@ export default function Home() {
             <p className="text-slate-500 text-sm leading-relaxed">
               An interactive physics simulation demonstrating load distribution and force multipliers through pulley systems.
             </p>
-          </Link>
+          </a>
 
           {/* Future demos will go here! */}
           
