@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newton's Method for Square Roots</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .serif { font-family: 'Lora', serif; }
+
+        /* The container holding both text and visualization */
+        .scrolly-container {
+            display: flex;
+            position: relative;
+            width: 100vw;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding-bottom: 20vh;
+        }
+
+        /* Left column: Text steps */
+        .steps-container {
+            width: 45%;
+            padding: 2rem 4rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .step {
+            min-height: 80vh; /* Make each step tall enough to force scrolling */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0.2;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease;
+            transform: translateY(20px);
+            padding: 2rem;
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 1rem;
+            margin-bottom: 40vh; /* Space between steps */
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .step.is-active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Right column: Sticky Visualization */
+        .viz-container {
+            width: 55%;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        #math-canvas {
+            width: 100%;
+            height: 80%;
+            max-height: 800px;
+            border-radius: 1rem;
+            background-color: #1e293b;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        h1, h2, h3 { font-family: 'Inter', sans-serif; font-weight: 800; }
+        
+        .accent { color: #38bdf8; } /* Light blue */
+        .accent-alt { color: #f472b6; } /* Pink */
+        .accent-green { color: #4ade80; }
+        
+        /* MathJax overrides for dark theme */
+        mjx-container { color: #e2e8f0; }
+
+        @media (max-width: 768px) {
+            .scrolly-container { flex-direction: column; }
+            .steps-container { width: 100%; padding: 1rem; padding-top: 100vh; }
+            .viz-container { width: 100%; position: fixed; top: 0; left: 0; z-index: 0; padding: 1rem; pointer-events: none;}
+            #math-canvas { height: 50vh; }
+            .step { min-height: 50vh; margin-bottom: 20vh; background: rgba(15, 23, 42, 0.85); z-index: 10; position: relative;}
+        }
+
+        /* Controls for step 0 */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        input[type="number"] {
+            background: #334155;
+            color: white;
+            border: 1px solid #475569;
+            border-radius: 4px;
+            padding: 8px;
+            width: 80px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="scrolly-container">
+    
+    <div class="steps-container">
+        <!-- Step 0: Intro -->
+        <div class="step" data-step="0">
+            <h1 class="text-4xl md:text-5xl mb-6 leading-tight">Finding <span class="accent">Square Roots</span> without a Calculator</h1>
+            <p class="text-lg md:text-xl serif leading-relaxed mb-4 text-slate-300">
+                Imagine you are back in the 17th century. You need to calculate \(\sqrt{S}\). Perfect squares like 16 or 25 are easy enough to guess, but what about something like \(\sqrt{12}\)? You only have pen and paper.
+            </p>
+            <p class="text-lg md:text-xl serif leading-relaxed text-slate-300">
+                Isaac Newton (and Joseph Raphson) popularized a brilliant method for approximating roots of functions. We can adapt this to find square roots incredibly quickly.
+            </p>
+            <div class="mt-8 p-4 bg-slate-800 rounded-lg border border-slate-700">
+                <p class="mb-2 text-sm text-slate-400">Let’s set a target number \(S\) we want to find the square root of:</p>
+                <div class="controls">
+                    <label>Find \(\sqrt{S}\) for \(S = \)</label>
+                    <input type="number" id="input-S" value="12" min="1" max="100">
+                    <button onclick="updateTargetS()" class="px-6 py-2 bg-sky-400 hover:bg-sky-300 text-slate-900 font-semibold rounded-lg shadow hover:-translate-y-0.5 transition-all">Set</button>
+                </div>
+            </div>
+            <p class="mt-8 text-sm text-slate-500 uppercase tracking-widest text-center animate-pulse">Scroll down to begin &darr;</p>
+        </div>
+
+        <!-- Step 1: Framing the problem -->
+        <div class="step" data-step="1">
+            <h2 class="text-3xl mb-4">Reframing the Problem</h2>
+            <p class="text-lg md:text-xl serif leading-relaxed mb-4 text-slate-300">
+                We want to find \(x = \sqrt{S}\). 
+            </p>
+            <p class="text-lg md:text-xl serif leading-relaxed mb-4 text-slate-300">
+                We can rewrite this equation: square both sides to get \(x^2 = S\), and then move everything to one side:
+            </p>
+            <div class="text-2xl text-center my-6">
+                \(f(x) = x^2 - S = 0\)
+            </div>
+            <p class="text-lg md:text-xl serif leading-relaxed text-slate-300">
+                Finding the square root of \(S\) is exactly the same as finding where the parabola <span class="accent-alt">\(f(x) = x^2 - S\)</span> crosses the x-axis (its <i>root</i>).
+            </p>
+            <p class="text-md serif mt-4 text-slate-400">
+                Look at the graph on the right. The white curve is our function. The point where it crosses the horizontal line is our answer.
+            </p>
+        </div>
+
+        <!-- Step 2: The Initial Guess -->
+        <div class="step" data-step="2">
+            <h2 class="text-3xl mb-4">Taking a Guess</h2>
+            <p class="text-lg md:text-xl serif leading-relaxed mb-4 text-slate-300">
+                Newton’s method requires us to start with an initial guess, let’s call it <span class="accent">\(x_0\)</span>. 
+            </p>
+            <p class="text-lg md:text-xl serif leading-relaxed mb-4 text-slate-300">
+                Let’s pick an arbitrary starting point on the x-axis. It doesn’t have to be perfect, just somewhere in the ballpark.
+            </p>
+             <div class="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700 flex flex-wrap items-center gap-4">
+                <label>Set initial guess \(x_0\): </label>
+                <input type="number" id="input-x0" value="6" step="0.5">
+                <button onclick="updateGuessX0()" class="px-6 py-2 bg-sky-400 hover:bg-sky-300 text-slate-900 font-semibold rounded-lg shadow hover:-translate-y-0.5 transition-all">Update Guess</button>
+            </div>
+            <p class="text-md serif mt-4 text-slate-400">
+                We go straight up from our guess \(x_0\) to see where it lands on the curve. This point is \((x_0, f(x_0))\).
+            </p>
+        </div>
+
+        <!-- Step 3: The Tangent Line -->
+        <div class="step" data-step="3">
+            <h2 class="text-3xl mb-4">The Magic Tangent</h2>
+            <p class="text-lg md:text-xl serif leading-relaxed mb-4 text-slate-300">
+                Here is the core idea of Newton’s method: locally, a curve looks like a straight line.
+            </p>
+            <p class="text-lg md:text-xl serif leading-relaxed mb-4 text-slate-300">
+                If we draw the <span class="accent-green">tangent line</span> to the curve exactly at our point \((x_0, f(x_0))\), it approximates the curve near that point.
+            </p>
+            <p class="text-lg md:text-xl serif leading-relaxed text-slate-300">
+                Calculus tells us the slope of this tangent line is the derivative of the function, \(f'(x) = 2x\).
+            </p>
+        </div>
+
+        <!-- Step 4: The Next Iteration -->
+        <div class="step" data-step="4">
+            <h2 class="text-3xl mb-4">Sliding Down to the Next Guess</h2>
+            <p class="text-lg md:text-xl serif leading-relaxed mb-4 text-slate-300">
+                Instead of trying to find where the curvy parabola hits zero (which is hard), we find where the <span class="accent-green">straight tangent line</span> hits zero (which is easy!).
+            </p>
+            <p class="text-lg md:text-xl serif leading-relaxed mb-4 text-slate-300">
+                We follow the tangent line down to the x-axis. The point where it crosses becomes our new, much better guess: <span class="accent">\(x_1\)</span>.
+            </p>
+            <div class="text-xl text-center my-6 bg-slate-800 p-4 rounded-lg">
+                The formula for this jump is:<br>
+                <span class="accent">\(x_{new} = x_{old} - \frac{f(x_{old})}{f'(x_{old})}\)</span>
+            </div>
+            <div class="text-lg text-center mb-6">
+                For square roots, this simplifies beautifully to:<br>
+                <span class="accent">\(x_1 = \frac{1}{2}(x_0 + \frac{S}{x_0})\)</span>
+            </div>
+             <p class="text-md serif mt-4 text-slate-400">
+                Notice how much closer \(x_1\) is to the actual root than \(x_0\) was!
+            </p>
+        </div>
+
+        <!-- Step 5: Iteration -->
+        <div class="step" data-step="5">
+            <h2 class="text-3xl mb-4">Rinse and Repeat</h2>
+            <p class="text-lg md:text-xl serif leading-relaxed mb-4 text-slate-300">
+                We now repeat the process. We start from \(x_1\), go up to the curve, draw a new tangent line, and follow it down to find \(x_2\).
+            </p>
+            <p class="text-lg md:text-xl serif leading-relaxed mb-4 text-slate-300">
+                Use the buttons below to step through the iterations. Watch how wildly fast it converges to the true answer.
+            </p>
+             <div class="mt-6 p-4 bg-slate-800 rounded-lg border border-slate-700 flex flex-wrap gap-4">
+                <button onclick="nextIteration()" id="btn-next" class="px-8 py-3 bg-green-400 hover:bg-green-300 text-green-900 font-bold rounded-lg shadow hover:-translate-y-0.5 transition-all whitespace-nowrap">Next Iteration</button>
+                <button onclick="resetIteration()" class="px-8 py-3 bg-red-500 hover:bg-red-400 text-white font-bold rounded-lg shadow hover:-translate-y-0.5 transition-all whitespace-nowrap">Reset</button>
+            </div>
+            <div id="iteration-stats" class="mt-6 font-mono text-sm text-slate-400">
+                Iteration: <span id="stat-iter">0</span><br>
+                Current Guess \(x\): <span id="stat-x"></span><br>
+                Error: <span id="stat-error"></span>
+            </div>
+        </div>
+
+         <!-- Step 6: Conclusion -->
+         <div class="step" data-step="6">
+            <h2 class="text-3xl mb-4">Quadratic Convergence</h2>
+            <p class="text-lg md:text-xl serif leading-relaxed mb-4 text-slate-300">
+                Newton’s method exhibits <strong>quadratic convergence</strong>. This means roughly the number of correct digits <i>doubles</i> with every step!
+            </p>
+            <p class="text-lg md:text-xl serif leading-relaxed text-slate-300">
+                What started as a geometric intuition—riding tangent lines down to zero—turns out to be one of the most powerful and ubiquitous numerical algorithms in all of mathematics and computer science.
+            </p>
+        </div>
+    </div>
+
+    <!-- Right column: The Canvas -->
+    <div class="viz-container">
+        <canvas id="math-canvas"></canvas>
+    </div>
+</div>
+
+<script>
+    // --- Canvas & Rendering Setup ---
+    const canvas = document.getElementById('math-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Virtual coordinates
+    let view = {
+        xMin: -2,
+        xMax: 12,
+        yMin: -17,
+        yMax: 100,
+        targetXMax: 12,
+        targetYMax: 100,
+        targetXMin: -2,
+        targetYMin: -17,
+        scaleX: 1,
+        scaleY: 1,
+        offsetX: 0,
+        offsetY: 0
+    };
+
+    let width, height;
+
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        // Use devicePixelRatio for crisp rendering on retina displays
+        const dpr = window.devicePixelRatio || 1;
+        width = rect.width;
+        height = rect.height;
+        
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        
+        // Scale context to match DPR
+        ctx.scale(dpr, dpr);
+        
+        // Ensure CSS size remains correct
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+
+        updateTransform();
+    }
+
+    function updateTransform() {
+        view.scaleX = width / (view.xMax - view.xMin);
+        // Flip Y axis so positive is up
+        view.scaleY = height / (view.yMin - view.yMax); 
+        
+        view.offsetX = -view.xMin * view.scaleX;
+        view.offsetY = height - view.yMin * view.scaleY;
+    }
+
+    // Math to Screen coordinate mapping
+    function mapX(x) { return x * view.scaleX + view.offsetX; }
+    function mapY(y) { return y * view.scaleY + view.offsetY; }
+
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+        draw();
+    });
+
+    // --- State Variables ---
+    let currentStep = 0;
+    
+    // Mathematical constants
+    let S = 12;
+    let initialX = 6;
+    
+    // Animation state
+    let targetX = initialX; // The current 'guess' being animated towards
+    let animX = initialX;   // The smoothly interpolated x value
+    let iterations = [initialX]; // History of guesses
+    let iterationIndex = 0;
+    
+    // Function definition
+    const f = (x) => x*x - S;
+    const df = (x) => 2*x;
+
+    // --- Easing and Animation ---
+    let lastTime = 0;
+    let animationProgress = 0; // 0 to 1 for intra-step animations
+
+    function lerp(start, end, amt) {
+        return (1 - amt) * start + amt * end;
+    }
+
+    // --- Scrollytelling Logic ---
+    const steps = document.querySelectorAll('.step');
+    
+    function updateActiveStep() {
+        let activeIndex = 0;
+        const triggerPoint = window.innerHeight * 0.5; // Trigger at middle of screen
+
+        steps.forEach((step, index) => {
+            const rect = step.getBoundingClientRect();
+            if (rect.top < triggerPoint && rect.bottom > triggerPoint) {
+                activeIndex = index;
+            }
+        });
+
+        if (activeIndex !== currentStep) {
+            currentStep = activeIndex;
+            steps.forEach((s, i) => {
+                s.classList.toggle('is-active', i === currentStep);
+            });
+            handleStepChange(currentStep);
+        }
+    }
+
+    window.addEventListener('scroll', updateActiveStep);
+
+    function handleStepChange(step) {
+        // Reset animation progress on step change
+        animationProgress = 0;
+
+        switch (step) {
+            case 0: // Intro
+                // View: wide enough to see function up to 100 S
+                setTargetView(-2, Math.max(12, Math.sqrt(S) + 5), -(S + 5), S*2 + 10);
+                break;
+            case 1: // Reframing (Show parabola)
+                setTargetView(-2, Math.max(12, Math.sqrt(S) + 5), -(S + 5), S*2 + 10);
+                break;
+            case 2: // Initial guess (Show x0 and point on curve)
+                animX = iterations[0];
+                iterationIndex = 0;
+                setTargetView(-2, Math.max(iterations[0] + 2, Math.sqrt(S) + 2), -(S + 5), f(iterations[0]) + 20);
+                break;
+            case 3: // Tangent line
+                // View focuses slightly on the point
+                break;
+            case 4: // Next guess (Show x1)
+                if (iterations.length === 1) {
+                    calculateNextIteration();
+                }
+                iterationIndex = 1;
+                // Animate to x1
+                break;
+            case 5: // Loop
+                // Zoom in on the root
+                setTargetView(Math.sqrt(S) - 2, Math.sqrt(S) + 4, -10, 30);
+                updateStats();
+                break;
+            case 6: // Conclusion
+                // Tightly zoom on root
+                setTargetView(Math.sqrt(S) - 0.5, Math.sqrt(S) + 0.5, -2, 2);
+                break;
+        }
+    }
+
+    function setTargetView(xmin, xmax, ymin, ymax) {
+        view.targetXMin = xmin;
+        view.targetXMax = xmax;
+        view.targetYMin = ymin;
+        view.targetYMax = ymax;
+    }
+
+    function updateCamera() {
+        const ease = 0.05;
+        view.xMin = lerp(view.xMin, view.targetXMin, ease);
+        view.xMax = lerp(view.xMax, view.targetXMax, ease);
+        view.yMin = lerp(view.yMin, view.targetYMin, ease);
+        view.yMax = lerp(view.yMax, view.targetYMax, ease);
+        updateTransform();
+    }
+
+    // --- Interactive Controls ---
+    window.updateTargetS = function() {
+        const val = parseFloat(document.getElementById('input-S').value);
+        if(!isNaN(val) && val > 0) {
+            S = val;
+            iterations = [initialX];
+            iterationIndex = 0;
+            if(currentStep > 0) handleStepChange(currentStep); // Retrigger view update
+        }
+    }
+
+    window.updateGuessX0 = function() {
+        const val = parseFloat(document.getElementById('input-x0').value);
+        if(!isNaN(val)) {
+            initialX = val;
+            iterations = [initialX];
+            animX = initialX;
+            iterationIndex = 0;
+            if(currentStep === 2) handleStepChange(2);
+        }
+    }
+
+    function calculateNextIteration() {
+        const x_old = iterations[iterations.length - 1];
+        const x_new = x_old - f(x_old) / df(x_old);
+        iterations.push(x_new);
+    }
+
+    window.nextIteration = function() {
+        if(iterationIndex >= iterations.length - 1) {
+            calculateNextIteration();
+        }
+        iterationIndex++;
+        updateStats();
+        
+        // Adjust camera to zoom in on root as we get closer
+        const currentX = iterations[iterationIndex];
+        const root = Math.sqrt(S);
+        const dist = Math.abs(currentX - root);
+        
+        if (dist < 1) {
+             setTargetView(root - dist*2 - 0.1, root + dist*2 + 0.1, -dist*4 - 0.1, dist*4 + 0.1);
+        }
+    }
+
+    window.resetIteration = function() {
+        iterations = [initialX];
+        iterationIndex = 0;
+        animX = initialX;
+        setTargetView(Math.sqrt(S) - 2, Math.sqrt(S) + 4, -10, 30);
+        updateStats();
+    }
+
+    function updateStats() {
+        const x = iterations[iterationIndex];
+        const root = Math.sqrt(S);
+        
+        const iterSpan = document.getElementById('stat-iter');
+        const xSpan = document.getElementById('stat-x');
+        const errSpan = document.getElementById('stat-error');
+        
+        if (iterSpan) iterSpan.innerText = iterationIndex;
+        if (xSpan) xSpan.innerText = x.toFixed(8);
+        if (errSpan) errSpan.innerText = Math.abs(x - root).toExponential(3);
+    }
+
+    function drawGrid() {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 1;
+
+        const getStep = (range) => {
+            if (range > 100) return 20;
+            if (range > 50) return 10;
+            if (range > 20) return 5;
+            if (range < 0.2) return 0.01;
+            if (range < 2) return 0.1;
+            return 1;
+        };
+
+        const getNiceMultiplier = (mult) => {
+            if (mult <= 1) return 1;
+            if (mult <= 2) return 2;
+            if (mult <= 5) return 5;
+            if (mult <= 10) return 10;
+            return Math.ceil(mult / 10) * 10;
+        };
+
+        // Determine grid step based on view width
+        const viewWidth = view.xMax - view.xMin;
+        let step = getStep(viewWidth);
+
+        // Vertical lines (X-axis markings)
+        const xPixelStep = Math.abs(step * view.scaleX);
+        const xLabelEvery = getNiceMultiplier(xPixelStep < 35 ? Math.ceil(35 / xPixelStep) : 1);
+        const startX = Math.floor(view.xMin / step) * step;
+        
+        for (let x = startX; x <= view.xMax; x += step) {
+            ctx.beginPath();
+            ctx.moveTo(mapX(x), 0);
+            ctx.lineTo(mapX(x), height);
+            ctx.stroke();
+            
+            // Labels
+            if (Math.abs(x) > 0.001 && Math.abs(Math.round(x / step)) % xLabelEvery === 0) { 
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.font = '12px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText(Number(x.toFixed(3)), mapX(x), mapY(0) + 15);
+            }
+        }
+
+        // Horizontal lines (Y-axis markings)
+        // Allow the Y-axis to determine its own step size based on its visible range
+        const viewHeight = view.yMax - view.yMin;
+        let yStep = getStep(viewHeight);
+        
+        const yPixelStep = Math.abs(yStep * view.scaleY);
+        const yLabelEvery = getNiceMultiplier(yPixelStep < 20 ? Math.ceil(20 / yPixelStep) : 1);
+
+        const startY = Math.floor(view.yMin / yStep) * yStep;
+        for (let y = startY; y <= view.yMax; y += yStep) {
+            ctx.beginPath();
+            ctx.moveTo(0, mapY(y));
+            ctx.lineTo(width, mapY(y));
+            ctx.stroke();
+            
+            // Labels for Y-axis
+            if (Math.abs(y) > 0.001 && Math.abs(Math.round(y / yStep)) % yLabelEvery === 0) {
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.font = '12px Inter';
+                
+                let labelX = mapX(0) - 8;
+                ctx.textAlign = 'right';
+                
+                // Keep label visible if Y-axis moves off-screen to the left
+                if (labelX < 20) {
+                    labelX = 10;
+                    ctx.textAlign = 'left';
+                }
+                
+                ctx.fillText(Number(y.toFixed(3)), labelX, mapY(y) + 4);
+            }
+        }
+    }
+
+    function drawAxes() {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 2;
+
+        // X Axis
+        ctx.beginPath();
+        ctx.moveTo(0, mapY(0));
+        ctx.lineTo(width, mapY(0));
+        ctx.stroke();
+
+        // X Axis Label
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.font = 'italic 16px Lora, serif';
+        ctx.textAlign = 'right';
+        let xLabelY = mapY(0) - 10;
+        if (xLabelY > height - 10) xLabelY = height - 10; // Keep on screen if origin goes low
+        if (xLabelY < 20) xLabelY = 20; // Keep on screen if origin goes high
+        ctx.fillText('x', width - 20, xLabelY);
+
+        // Y Axis
+        ctx.beginPath();
+        ctx.moveTo(mapX(0), 0);
+        ctx.lineTo(mapX(0), height);
+        ctx.stroke();
+
+        // Y Axis Label
+        ctx.textAlign = 'left';
+        let yLabelX = mapX(0) + 10;
+        if (yLabelX < 20) yLabelX = 20; // Keep on screen if origin goes left
+        if (yLabelX > width - 20) yLabelX = width - 30; // Keep on screen if origin goes right
+        ctx.fillText('y', yLabelX, 20);
+    }
+
+    function drawFunction() {
+        ctx.strokeStyle = '#e2e8f0'; // slate-200
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+
+        const pixelStep = 2; // draw every 2 pixels
+        for (let px = 0; px <= width; px += pixelStep) {
+            // Unmap pixel X to graph X
+            const x = (px - view.offsetX) / view.scaleX;
+            const y = f(x);
+            const py = mapY(y);
+
+            if (px === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+        
+        // Draw S line (optional, for step 1)
+        if (currentStep === 1) {
+            ctx.strokeStyle = 'rgba(244, 114, 182, 0.3)'; // pink fading
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, mapY(0)); // Just showing the x-axis as the target
+            ctx.lineTo(width, mapY(0));
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Highlight root
+            const root = Math.sqrt(S);
+            drawPoint(root, 0, '#38bdf8', 6);
+            
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = '16px Inter';
+            ctx.textAlign = 'left';
+            ctx.fillText(`√${S}`, mapX(root) + 10, mapY(0) - 10);
+        }
+    }
+
+    function drawPoint(x, y, color, size=5) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(mapX(x), mapY(y), size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawDashedLine(x1, y1, x2, y2, color) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(mapX(x1), mapY(y1));
+        ctx.lineTo(mapX(x2), mapY(y2));
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    function drawNewtonStep() {
+        if (currentStep < 2) return;
+
+        // Draw historical zig-zag path if in step 5 or later
+        if (currentStep >= 5 && iterationIndex > 0) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            
+            let firstX = iterations[0];
+            ctx.moveTo(mapX(firstX), mapY(0));
+            
+            for (let i = 0; i < iterationIndex; i++) {
+                let xi = iterations[i];
+                let yi = f(xi);
+                let xnext = iterations[i+1];
+                
+                // Line up to curve
+                ctx.lineTo(mapX(xi), mapY(yi));
+                
+                // Line down to next root along tangent
+                ctx.lineTo(mapX(xnext), mapY(0));
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw historical points
+            for (let i = 0; i < iterationIndex; i++) {
+                let xi = iterations[i];
+                let yi = f(xi);
+                drawPoint(xi, 0, 'rgba(56, 189, 248, 0.3)', 4);
+                drawPoint(xi, yi, 'rgba(244, 114, 182, 0.3)', 4);
+            }
+        }
+
+        // Smoothly animate current X based on step state
+        let targetAnimX = iterations[iterationIndex];
+        
+        // If we are in step 4 transitioning from x0 to x1
+        if (currentStep === 4 && iterationIndex > 0) {
+            // Animate moving down the tangent line
+            animationProgress = Math.min(1, animationProgress + 0.015);
+            // We want to visualize x0, the tangent from x0, and slide a point down to x1
+            let prevX = iterations[iterationIndex - 1];
+            targetAnimX = prevX; // Keep the base structure at prevX
+        } else if (currentStep >= 5) {
+            // In iteration loop, snap to current index but allow smooth camera
+            targetAnimX = iterations[iterationIndex];
+            animationProgress = 1;
+        } else {
+             targetAnimX = iterations[iterationIndex];
+             animationProgress = 1;
+        }
+
+        // Animate the base X coordinate slightly for smoothness when dragged
+        animX = lerp(animX, targetAnimX, 0.1);
+        
+        let x_n = animX;
+        let y_n = f(x_n);
+        let slope = df(x_n);
+
+        // Draw x_n on axis
+        drawPoint(x_n, 0, '#38bdf8', 5); // Light blue
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText(`x${iterationIndex}`, mapX(x_n), mapY(0) + 20);
+
+        if (currentStep >= 2) {
+            // Vertical dashed line to curve
+            drawDashedLine(x_n, 0, x_n, y_n, 'rgba(56, 189, 248, 0.5)');
+            // Point on curve
+            drawPoint(x_n, y_n, '#f472b6', 6); // Pink
+        }
+
+        if (currentStep >= 3) {
+            // Draw tangent line
+            // Line equation: y - y_n = slope * (x - x_n) => y = slope*(x - x_n) + y_n
+            // Find intersection with edges of view to draw long line
+            const leftY = slope * (view.xMin - x_n) + y_n;
+            const rightY = slope * (view.xMax - x_n) + y_n;
+            
+            ctx.strokeStyle = '#4ade80'; // Green
+            ctx.lineWidth = 2;
+            
+            if(currentStep === 3) {
+                // Animate tangent drawing in step 3
+                animationProgress = Math.min(1, animationProgress + 0.02);
+                const drawnX = lerp(x_n, view.xMin, animationProgress);
+                const drawnY = slope * (drawnX - x_n) + y_n;
+                
+                const drawnX2 = lerp(x_n, view.xMax, animationProgress);
+                const drawnY2 = slope * (drawnX2 - x_n) + y_n;
+
+                ctx.beginPath();
+                ctx.moveTo(mapX(drawnX), mapY(drawnY));
+                ctx.lineTo(mapX(drawnX2), mapY(drawnY2));
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(mapX(view.xMin), mapY(leftY));
+                ctx.lineTo(mapX(view.xMax), mapY(rightY));
+                ctx.stroke();
+            }
+
+            // Find next intercept x_{n+1}
+            let x_next = x_n - y_n / slope;
+
+            if (currentStep >= 4) {
+                // Show intersection with x-axis
+                
+                if (currentStep === 4 && animationProgress < 1) {
+                    // Sliding point animation
+                    let slideX = lerp(x_n, x_next, animationProgress);
+                    let slideY = slope * (slideX - x_n) + y_n;
+                    drawPoint(slideX, slideY, '#fbbf24', 8); // Yellow sliding dot
+                } else {
+                    drawPoint(x_next, 0, '#fbbf24', 6);
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.fillText(`x${iterationIndex+1}`, mapX(x_next), mapY(0) - 10);
+                }
+            }
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        updateCamera();
+
+        drawGrid();
+        drawAxes();
+        drawFunction();
+        drawNewtonStep();
+    }
+
+    function animate(time) {
+        requestAnimationFrame(animate);
+        // Throttle to roughly 60fps
+        if (time - lastTime < 16) return;
+        lastTime = time;
+        draw();
+    }
+
+    // Initialize
+    window.onload = () => {
+        resizeCanvas();
+        handleStepChange(0); // Trigger initial state
+        steps[0].classList.add('is-active');
+        requestAnimationFrame(animate);
+    };
+
+</script>
+</body>
+</html>
