@@ -90,6 +90,18 @@ export default function Home() {
               Discover how to calculate square roots without a calculator by using calculus and tangent lines to rapidly zero in on the answer.
             </p>
           </a>
+
+          <a 
+            href="/monty-hall.html" 
+            className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-amber-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
+          >
+            <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-amber-400 transition-colors">
+              The Monty Hall Problem
+            </h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              A classic probability puzzle. Unpack the math behind the infamous game show scenario through interactive scrollytelling and a live simulator.
+            </p>
+          </a>
           
           {/* Future demos will go here! */}
           
