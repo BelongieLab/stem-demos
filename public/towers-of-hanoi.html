@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Towers of Hanoi: A Mathematical Exploration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a; /* slate-900 */
+            --text-color: #f8fafc; /* slate-50 */
+            --accent-color: #38bdf8; /* sky-400 */
+            --secondary-accent: #a78bfa; /* violet-400 */
+            --panel-bg: #1e293b; /* slate-800 */
+            --border-color: #334155; /* slate-700 */
+            --peg-color: #94a3b8; /* slate-400 */
+            --disk-colors: #ef4444, #f97316, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6, #d946ef;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Typography */
+        h1, h2, h3 { font-weight: 700; tracking: tight; }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; color: var(--text-color); }
+        h2 { font-size: 1.75rem; margin-top: 2rem; margin-bottom: 1rem; color: var(--accent-color); }
+        p { line-height: 1.7; margin-bottom: 1rem; color: #cbd5e1; }
+        .math { font-family: 'Fira Code', monospace; background: rgba(255,255,255,0.1); padding: 0.2em 0.4em; border-radius: 4px; color: var(--secondary-accent); }
+        
+        /* Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .lesson-panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        /* Scrollbar styling for lesson panel */
+        .lesson-panel::-webkit-scrollbar { width: 8px; }
+        .lesson-panel::-webkit-scrollbar-track { background: var(--bg-color); border-radius: 4px;}
+        .lesson-panel::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px;}
+        .lesson-panel::-webkit-scrollbar-thumb:hover { background: var(--peg-color); }
+
+        .viz-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            position: sticky;
+            top: 2rem;
+        }
+
+        /* Interactive Elements */
+        .controls {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        button {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        button:hover { background-color: rgba(255,255,255,0.1); border-color: var(--peg-color); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button.primary { background-color: var(--accent-color); color: var(--bg-color); border: none; }
+        button.primary:hover { background-color: #0284c7; }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px; width: 16px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px;
+            cursor: pointer;
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        /* Hanoi Canvas and Visuals */
+        .canvas-container {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            position: relative;
+            height: 400px; /* Fixed height for visualization */
+            overflow: hidden;
+        }
+
+        .peg-container {
+            width: 33.333%;
+            height: 75%;
+            position: absolute;
+            bottom: 40px;
+        }
+
+        .peg {
+            width: 12px;
+            height: 100%;
+            background-color: var(--peg-color);
+            border-radius: 6px 6px 0 0;
+            position: absolute;
+            bottom: 8px; /* Embeds slightly into the base */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        .base {
+            width: 80%;
+            height: 16px;
+            background-color: var(--border-color);
+            border-radius: 8px;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+        }
+        
+        .peg-label {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Fira Code', monospace;
+            color: var(--peg-color);
+            font-weight: bold;
+        }
+
+        .disk {
+            height: 24px;
+            border-radius: 12px;
+            position: absolute;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Smooth movement */
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.8rem;
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .disk.moving {
+            z-index: 30; /* Bring moving disk to front */
+        }
+
+        /* State display */
+        .state-display {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .state-row { display: flex; justify-content: space-between; }
+        .highlight-state { color: var(--accent-color); font-weight: bold; }
+
+        /* Step explanation tooltip */
+        #step-explanation {
+            min-height: 3rem;
+            font-style: italic;
+            color: var(--secondary-accent);
+            text-align: center;
+        }
+
+        /* SVG Icons */
+        .icon { width: 1.2rem; height: 1.2rem; fill: currentColor; }
+
+        /* Highlight classes for lesson */
+        .concept-highlight {
+            cursor: pointer;
+            border-bottom: 1px dashed var(--accent-color);
+            color: var(--accent-color);
+            transition: color 0.2s;
+        }
+        .concept-highlight:hover { color: #bae6fd; border-bottom-style: solid; }
+
+        /* Free play styling */
+        .fp-peg-container {
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+        .fp-peg-container:hover {
+            background-color: rgba(255,255,255,0.05);
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            25% { transform: translateX(calc(-50% - 5px)) translateY(0); }
+            75% { transform: translateX(calc(-50% + 5px)) translateY(0); }
+        }
+        .shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* Win Celebration Animations */
+        @keyframes winGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(34, 197, 94, 0.1); border-color: var(--border-color); }
+            50% { box-shadow: 0 0 40px rgba(34, 197, 94, 0.7); border-color: #4ade80; }
+        }
+        .won-game {
+            animation: winGlow 2s ease-in-out infinite !important;
+            border-color: #4ade80 !important;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .win-text {
+            display: inline-block;
+            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            text-shadow: 0 2px 15px rgba(34, 197, 94, 0.4);
+            color: #4ade80;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Left Panel: Lesson Content -->
+        <div class="lesson-panel" id="lesson-content">
+            <h1>Towers of Hanoi</h1>
+            <p>Welcome to an exploration of one of computer science's most famous puzzles. The Towers of Hanoi isn't just a game; it's a profound window into <span class="concept-highlight" onclick="highlightConcept('recursion')">recursion</span>, exponential growth, and surprisingly, <span class="concept-highlight" onclick="highlightConcept('binary')">binary counting</span>.</p>
+            
+            <h2>The Rules</h2>
+            <p>You have three pegs and <span class="math">N</span> disks of different sizes. They start neatly stacked on the left peg, from largest at the bottom to smallest at the top.</p>
+            <p>The goal is to move the entire stack to the right peg, obeying two simple rules:</p>
+            <ul class="list-disc list-inside mb-4 text-slate-300">
+                <li>Move only one disk at a time.</li>
+                <li>Never place a larger disk onto a smaller disk.</li>
+            </ul>
+
+            <h2 id="section-recursion">The Recursive Insight</h2>
+            <p>How do we move a stack of 4 disks? It seems daunting. But what if we knew how to move 3 disks?</p>
+            <p>To move a stack of <span class="math">N</span> disks from Source to Target:</p>
+            <ol class="list-decimal list-inside mb-4 text-slate-300 space-y-2">
+                <li>Move the top <span class="math">N-1</span> disks from Source to the Auxiliary peg. <i>(We trust our recursive function to handle this smaller problem).</i></li>
+                <li>Move the massive <span class="math">Nth</span> disk (the bottom one) directly from Source to Target.</li>
+                <li>Move those <span class="math">N-1</span> disks from Auxiliary onto the Target, resting them on the big disk.</li>
+            </ol>
+            <p>This "leap of faith" is the essence of recursion. We break a large problem into smaller versions of itself until we reach a base case (moving 1 disk is trivial).</p>
+
+            <div class="bg-slate-900 p-4 rounded-lg border border-slate-700 mb-6 font-mono text-sm overflow-x-auto">
+<pre><code class="text-sky-300">function</code> <code class="text-blue-400">hanoi</code>(n, source, target, aux) {
+    <code class="text-sky-300">if</code> (n === <code class="text-orange-400">0</code>) <code class="text-sky-300">return</code>;
+    
+    <code class="text-slate-500">// 1. Move n-1 disks out of the way</code>
+    <code class="text-blue-400">hanoi</code>(n - <code class="text-orange-400">1</code>, source, aux, target);
+    
+    <code class="text-slate-500">// 2. Move the largest disk</code>
+    <code class="text-blue-400">moveDisk</code>(source, target);
+    
+    <code class="text-slate-500">// 3. Move n-1 disks onto the target</code>
+    <code class="text-blue-400">hanoi</code>(n - <code class="text-orange-400">1</code>, aux, target, source);
+}</code></pre>
+            </div>
+
+            <h2 id="section-binary">The Binary Connection</h2>
+            <p>There is a beautiful, hidden structure here. Let's look at the disks. Label them from smallest (disk 0) to largest (disk <span class="math">N-1</span>).</p>
+            <p>Watch the disks as they move. The smallest disk moves every alternate step (steps 1, 3, 5...). The next disk moves every 4 steps (steps 2, 6, 10...). Disk <span class="math">k</span> moves at step <span class="math">2<sup>k</sup></span> and then every <span class="math">2<sup>k+1</sup></span> steps.</p>
+            <p>If we write the step number in binary, the position of the <strong>least significant 1-bit</strong> tells us exactly which disk to move!</p>
+            <ul class="list-disc list-inside mb-4 text-slate-300">
+                <li>Step 1 (00<strong>1</strong>): Move Disk 0</li>
+                <li>Step 2 (0<strong>1</strong>0): Move Disk 1</li>
+                <li>Step 3 (01<strong>1</strong>): Move Disk 0</li>
+                <li>Step 4 (<strong>1</strong>00): Move Disk 2</li>
+            </ul>
+            <p>Furthermore, the total number of minimum moves required for <span class="math">N</span> disks is exactly <span class="math">2<sup>N</sup> - 1</span>. A tower of 64 disks, as in the ancient legend, would take <span class="math">2<sup>64</sup> - 1</span> moves—billions of years even at one move per second.</p>
+        </div>
+
+        <!-- Right Panel: Visualization -->
+        <div class="viz-panel">
+            
+            <div class="canvas-container" id="hanoi-canvas">
+                <!-- Pegs (A, B, C) -->
+                <div class="peg-container" id="peg-0" style="left: 0%;">
+                    <div class="peg"></div>
+                    <div class="base"></div>
+                    <div class="peg-label">Peg A</div>
+                </div>
+                <div class="peg-container" id="peg-1" style="left: 33.333%;">
+                    <div class="peg"></div>
+                    <div class="base"></div>
+                    <div class="peg-label">Peg B</div>
+                </div>
+                <div class="peg-container" id="peg-2" style="left: 66.666%;">
+                    <div class="peg"></div>
+                    <div class="base"></div>
+                    <div class="peg-label">Peg C</div>
+                </div>
+                <!-- Disks will be injected here via JS -->
+            </div>
+
+            <div class="controls">
+                <div class="control-row">
+                    <label for="diskCount" class="font-semibold w-24">Disks: <span id="diskCountLabel" class="text-accent-color">4</span></label>
+                    <input type="range" id="diskCount" min="1" max="8" value="4">
+                </div>
+                
+                <div class="control-row">
+                    <label for="speedControl" class="font-semibold w-24">Speed:</label>
+                    <input type="range" id="speedControl" min="1" max="100" value="50">
+                </div>
+
+                <div class="control-row justify-center mt-2">
+                    <button id="btn-reset" title="Reset">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                    </button>
+                    <button id="btn-step-prev" title="Step Backward" disabled>
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
+                    </button>
+                    <button id="btn-play" class="primary w-32" title="Play/Pause">
+                        <span id="play-text">Auto Play</span>
+                    </button>
+                    <button id="btn-step-next" title="Step Forward">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                    </button>
+                    <button id="btn-fast-forward" title="Jump to End">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+                    </button>
+                </div>
+                
+                <div id="step-explanation">Ready to explore.</div>
+            </div>
+
+            <!-- State Monitor -->
+            <div class="state-display">
+                <div class="state-row border-b border-slate-700 pb-2 mb-1">
+                    <span>Moves Completed:</span>
+                    <span id="move-count" class="text-white font-bold">0</span> / <span id="total-moves">15</span>
+                </div>
+                <div class="state-row">
+                    <span>Move Number (Decimal):</span>
+                    <span id="move-dec" class="text-white">0</span>
+                </div>
+                <div class="state-row">
+                    <span>Move Number (Binary):</span>
+                    <span id="move-bin" class="text-sky-300 font-bold">0000</span>
+                </div>
+                <div class="text-xs text-slate-500 mt-1 italic">
+                    Notice how the lowest significant '1' bit corresponds to the disk being moved.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Free Play Section -->
+    <div class="container" style="margin-top: 0; padding-top: 0;">
+        <div class="lesson-panel" style="grid-column: 1 / -1;">
+            <h2>Free Play Area</h2>
+            <p>Try solving it yourself! Click a peg to select its top disk, then click another peg to move it. The number of disks dynamically matches your selection in the controls above.</p>
+            
+            <div class="canvas-container" id="fp-canvas">
+                <!-- Free Play Pegs (A, B, C) -->
+                <div class="peg-container fp-peg-container" id="fp-peg-container-0" style="left: 0%;">
+                    <div class="peg"></div>
+                    <div class="base"></div>
+                    <div class="peg-label">Peg A</div>
+                </div>
+                <div class="peg-container fp-peg-container" id="fp-peg-container-1" style="left: 33.333%;">
+                    <div class="peg"></div>
+                    <div class="base"></div>
+                    <div class="peg-label">Peg B</div>
+                </div>
+                <div class="peg-container fp-peg-container" id="fp-peg-container-2" style="left: 66.666%;">
+                    <div class="peg"></div>
+                    <div class="base"></div>
+                    <div class="peg-label">Peg C</div>
+                </div>
+                <!-- Free play disks injected via JS -->
+            </div>
+
+            <div class="flex items-center justify-between mt-6">
+                <span id="fp-moves" class="text-slate-400 font-mono text-lg">Moves: 0 / Min: 15</span>
+                <button id="btn-fp-reset" class="primary w-40">Reset Game</button>
+            </div>
+            <div id="fp-message" class="text-center font-bold mt-4 h-10 text-xl flex items-center justify-center"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        const config = {
+            numDisks: 4,
+            speedMs: 600,
+            diskColors: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef'],
+            pegWidth: 30, // Percentage width of peg container
+        };
+
+        let state = {
+            pegs: [[], [], []], // Array of arrays representing disks on pegs (0, 1, 2)
+            moves: [],          // Array of move objects: { disk, from, to }
+            currentMoveIndex: 0,
+            isPlaying: false,
+            animationTimer: null,
+            isAnimating: false
+        };
+
+        // --- DOM Elements ---
+        const canvas = document.getElementById('hanoi-canvas');
+        const pegContainers = [
+            document.getElementById('peg-0'),
+            document.getElementById('peg-1'),
+            document.getElementById('peg-2')
+        ];
+        
+        const ui = {
+            diskCount: document.getElementById('diskCount'),
+            diskCountLabel: document.getElementById('diskCountLabel'),
+            speedControl: document.getElementById('speedControl'),
+            btnReset: document.getElementById('btn-reset'),
+            btnStepPrev: document.getElementById('btn-step-prev'),
+            btnStepNext: document.getElementById('btn-step-next'),
+            btnPlay: document.getElementById('btn-play'),
+            playText: document.getElementById('play-text'),
+            btnFastForward: document.getElementById('btn-fast-forward'),
+            moveCount: document.getElementById('move-count'),
+            totalMoves: document.getElementById('total-moves'),
+            moveDec: document.getElementById('move-dec'),
+            moveBin: document.getElementById('move-bin'),
+            stepExplanation: document.getElementById('step-explanation')
+        };
+
+        // --- Algorithm ---
+        
+        // Generate the sequence of moves recursively
+        function generateMoves(n, source, target, aux) {
+            if (n === 0) return;
+            generateMoves(n - 1, source, aux, target);
+            state.moves.push({ disk: n - 1, from: source, to: target }); // disk 0 is smallest
+            generateMoves(n - 1, aux, target, source);
+        }
+
+        // Initialize puzzle state
+        function initPuzzle() {
+            stopPlay();
+            config.numDisks = parseInt(ui.diskCount.value);
+            ui.diskCountLabel.innerText = config.numDisks;
+            
+            // Reset state
+            state.pegs = [[], [], []];
+            for (let i = config.numDisks - 1; i >= 0; i--) {
+                state.pegs[0].push(i);
+            }
+            
+            state.moves = [];
+            generateMoves(config.numDisks, 0, 2, 1);
+            
+            state.currentMoveIndex = 0;
+            ui.totalMoves.innerText = state.moves.length;
+            
+            renderDisksInitial();
+            updateUI();
+            
+            if (typeof initFreePlay === 'function') {
+                initFreePlay(); // Reset free play whenever main settings change
+            }
+        }
+
+        // --- Rendering ---
+
+        // Create initial DOM elements for disks
+        function renderDisksInitial() {
+            // Remove old disks
+            document.querySelectorAll('.disk').forEach(el => el.remove());
+
+            const maxWidth = 28; // max width % relative to the entire canvas container
+            const minWidth = 8; // min width % relative to the canvas container
+            const heightPx = 24;
+            
+            for (let d = config.numDisks - 1; d >= 0; d--) {
+                const diskEl = document.createElement('div');
+                diskEl.className = 'disk';
+                diskEl.id = `disk-${d}`;
+                diskEl.innerText = d; // Label disk 0 to N-1
+                
+                // Styling
+                diskEl.style.backgroundColor = config.diskColors[d % config.diskColors.length];
+                
+                // Calculate width (largest is d=max, smallest is d=0)
+                // Actually, let's make disk N-1 largest, 0 smallest for consistency with binary math
+                const sizeRatio = config.numDisks > 1 ? d / (config.numDisks - 1) : 1;
+                const widthPercent = minWidth + (maxWidth - minWidth) * sizeRatio;
+                diskEl.style.width = `${widthPercent}%`;
+                diskEl.style.height = `${heightPx}px`;
+
+                canvas.appendChild(diskEl);
+            }
+
+            positionAllDisks();
+        }
+
+        // Position all disks instantly based on state.pegs
+        function positionAllDisks() {
+            const heightPx = 24;
+            const gapPx = 2;
+            const bottomOffsetBase = 56; // 40px peg bottom offset + 16px base height
+
+            for (let p = 0; p < 3; p++) {
+                const pegStack = state.pegs[p];
+                for (let i = 0; i < pegStack.length; i++) {
+                    const diskId = pegStack[i];
+                    const diskEl = document.getElementById(`disk-${diskId}`);
+                    if (!diskEl) continue;
+
+                    // Calculate X position
+                    // We need to position relative to the main canvas container.
+                    // The peg containers take up 30% width each and are flex-spaced.
+                    // Instead of trying to guess the flex spacing, we can calculate based on percentages.
+                    // The centers of the pegs are roughly at 16.66%, 50%, and 83.33% of the canvas width.
+                    const pegCenterPercent = (100 / 6) + (100 / 3) * p;
+                    
+                    // Center the disk on the peg. 
+                    // Note: diskEl.style.width is a percentage of the PEG CONTAINER'S width (which is 30% of canvas).
+                    // To center it via 'left', we need to translate it back by half its width.
+                    diskEl.style.left = `${pegCenterPercent}%`;
+                    diskEl.style.transform = `translateX(-50%) translateY(0)`; 
+                    
+                    // Calculate Y position
+                    const bottomPx = bottomOffsetBase + i * (heightPx + gapPx);
+                    diskEl.style.bottom = `${bottomPx}px`;
+                }
+            }
+        }
+
+        // Animate a single move
+        function animateMove(move, forward = true, callback) {
+            if (state.isAnimating) return;
+            state.isAnimating = true;
+
+            const fromPegIndex = forward ? move.from : move.to;
+            const toPegIndex = forward ? move.to : move.from;
+            const diskId = move.disk;
+
+            // Update logical state
+            const movingDisk = state.pegs[fromPegIndex].pop();
+            state.pegs[toPegIndex].push(movingDisk);
+
+            const diskEl = document.getElementById(`disk-${diskId}`);
+            if (!diskEl) { state.isAnimating = false; if(callback) callback(); return; }
+
+            diskEl.classList.add('moving');
+            
+            // Current visual position data
+            const heightPx = 24;
+            const gapPx = 2;
+            const bottomOffsetBase = 56; // Match the updated base offset
+            
+            // Target logical positions (where it should end up)
+            const targetStackSize = state.pegs[toPegIndex].length;
+            const targetBottomPx = bottomOffsetBase + (targetStackSize - 1) * (heightPx + gapPx);
+            const targetCenterPercent = (100 / 6) + (100 / 3) * toPegIndex;
+
+            // We use CSS transition for the movement.
+            // 1. Move up
+            const liftHeight = 350; // px from bottom (clears the top of the pegs)
+            diskEl.style.bottom = `${liftHeight}px`;
+
+            setTimeout(() => {
+                // 2. Move across
+                diskEl.style.left = `${targetCenterPercent}%`;
+                
+                setTimeout(() => {
+                    // 3. Move down
+                    diskEl.style.bottom = `${targetBottomPx}px`;
+                    
+                    setTimeout(() => {
+                        diskEl.classList.remove('moving');
+                        state.isAnimating = false;
+                        if(callback) callback();
+                    }, config.speedMs * 0.35); // down duration
+                }, config.speedMs * 0.35); // across duration
+            }, config.speedMs * 0.3); // up duration
+            
+            // Update CSS transition duration based on speed
+            diskEl.style.transition = `bottom ${config.speedMs * 0.3}ms ease, left ${config.speedMs * 0.35}ms ease`;
+        }
+
+        // --- Interaction Logic ---
+
+        function updateUI() {
+            ui.moveCount.innerText = state.currentMoveIndex;
+            
+            const moveNum = state.currentMoveIndex;
+            ui.moveDec.innerText = moveNum;
+            
+            // Format binary with leading zeros based on numDisks
+            let binStr = moveNum.toString(2);
+            while (binStr.length < config.numDisks) binStr = "0" + binStr;
+            
+            // Highlight the least significant 1 bit
+            if (moveNum > 0) {
+                const lsbIndex = binStr.lastIndexOf('1');
+                if (lsbIndex !== -1) {
+                    binStr = binStr.substring(0, lsbIndex) + 
+                             `<span class="text-orange-400 font-extrabold text-lg">${binStr[lsbIndex]}</span>` + 
+                             binStr.substring(lsbIndex + 1);
+                }
+            }
+            ui.moveBin.innerHTML = binStr;
+
+            // Buttons state
+            ui.btnStepPrev.disabled = state.currentMoveIndex === 0 || state.isAnimating;
+            ui.btnStepNext.disabled = state.currentMoveIndex === state.moves.length || state.isAnimating;
+            ui.btnFastForward.disabled = state.currentMoveIndex === state.moves.length || state.isAnimating;
+            
+            // Explanation
+            if (state.currentMoveIndex > 0) {
+                const lastMove = state.moves[state.currentMoveIndex - 1];
+                const pegNames = ['A', 'B', 'C'];
+                ui.stepExplanation.innerHTML = `Moved Disk <strong style="color:${config.diskColors[lastMove.disk % config.diskColors.length]}">${lastMove.disk}</strong> from Peg ${pegNames[lastMove.from]} to Peg ${pegNames[lastMove.to]}`;
+            } else {
+                ui.stepExplanation.innerText = "Initial State. Ready to start.";
+            }
+        }
+
+        function stepForward() {
+            if (state.currentMoveIndex < state.moves.length && !state.isAnimating) {
+                const move = state.moves[state.currentMoveIndex];
+                state.currentMoveIndex++;
+                updateUI(); // Update UI immediately to show new move number
+                animateMove(move, true, () => {
+                    // Check if auto-play should continue
+                    if (state.isPlaying) {
+                        state.animationTimer = setTimeout(stepForward, 100); // small delay between moves
+                    }
+                });
+            } else if (state.currentMoveIndex >= state.moves.length) {
+                stopPlay();
+            }
+        }
+
+        function stepBackward() {
+            if (state.currentMoveIndex > 0 && !state.isAnimating) {
+                state.currentMoveIndex--;
+                const move = state.moves[state.currentMoveIndex];
+                // Update UI *after* stepping back logically
+                animateMove(move, false, updateUI); 
+            }
+        }
+
+        function jumpToEnd() {
+            stopPlay();
+            state.currentMoveIndex = state.moves.length;
+            
+            // Fast logical update
+            state.pegs = [[], [], []];
+            for (let i = config.numDisks - 1; i >= 0; i--) {
+                state.pegs[2].push(i); // All to target
+            }
+            
+            // Disable transitions temporarily for instant snap
+            document.querySelectorAll('.disk').forEach(el => {
+                el.style.transition = 'none';
+            });
+            
+            positionAllDisks();
+            
+            // Restore transitions
+            setTimeout(() => {
+                document.querySelectorAll('.disk').forEach(el => {
+                    el.style.transition = `bottom ${config.speedMs * 0.3}ms ease, left ${config.speedMs * 0.35}ms ease`;
+                });
+            }, 50);
+
+            updateUI();
+        }
+
+        function togglePlay() {
+            if (state.isPlaying) {
+                stopPlay();
+            } else {
+                if (state.currentMoveIndex === state.moves.length) {
+                    initPuzzle(); // Restart if at end
+                }
+                state.isPlaying = true;
+                ui.playText.innerText = "Pause";
+                ui.btnPlay.classList.replace('primary', 'bg-slate-700'); // Visual feedback
+                stepForward();
+            }
+        }
+
+        function stopPlay() {
+            state.isPlaying = false;
+            clearTimeout(state.animationTimer);
+            ui.playText.innerText = "Auto Play";
+            ui.btnPlay.classList.replace('bg-slate-700', 'primary');
+        }
+
+        // --- Event Listeners ---
+        ui.diskCount.addEventListener('input', (e) => {
+            ui.diskCountLabel.innerText = e.target.value;
+        });
+        ui.diskCount.addEventListener('change', initPuzzle);
+
+        ui.speedControl.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value); // 1 to 100
+            // Map 1 to slow (1500ms), 100 to fast (50ms)
+            config.speedMs = 1500 - ((val - 1) / 99) * 1450; 
+            
+            // Update transitions for currently existing disks
+            document.querySelectorAll('.disk:not(.fp-disk)').forEach(el => {
+                el.style.transition = `bottom ${config.speedMs * 0.3}ms ease, left ${config.speedMs * 0.35}ms ease`;
+            });
+        });
+
+        ui.btnReset.addEventListener('click', initPuzzle);
+        ui.btnStepNext.addEventListener('click', () => { stopPlay(); stepForward(); });
+        ui.btnStepPrev.addEventListener('click', () => { stopPlay(); stepBackward(); });
+        ui.btnPlay.addEventListener('click', togglePlay);
+        ui.btnFastForward.addEventListener('click', jumpToEnd);
+
+
+        // Helper for text highlights interacting with UI
+        window.highlightConcept = function(concept) {
+            if (concept === 'binary') {
+                // Flash the binary display
+                ui.moveBin.parentElement.style.backgroundColor = 'rgba(56, 189, 248, 0.2)';
+                setTimeout(() => {
+                    ui.moveBin.parentElement.style.backgroundColor = 'transparent';
+                }, 500);
+            } else if (concept === 'recursion') {
+                // Maybe scroll to code block
+                document.getElementById('section-recursion').scrollIntoView({ behavior: 'smooth' });
+            }
+        };
+
+        // --- Initialization ---
+        // Initialize on load
+        window.onload = () => {
+            initPuzzle();
+            
+            // Free play event listeners
+            document.getElementById('fp-peg-container-0').addEventListener('click', () => handleFpPegClick(0));
+            document.getElementById('fp-peg-container-1').addEventListener('click', () => handleFpPegClick(1));
+            document.getElementById('fp-peg-container-2').addEventListener('click', () => handleFpPegClick(2));
+            
+            document.getElementById('btn-fp-reset').addEventListener('click', initFreePlay);
+        };
+        
+        // --- Free Play Logic ---
+        let fpState = {
+            pegs: [[], [], []],
+            selectedPeg: null,
+            moves: 0
+        };
+
+        const fpCanvas = document.getElementById('fp-canvas');
+        const fpMessage = document.getElementById('fp-message');
+        const fpMovesDisplay = document.getElementById('fp-moves');
+
+        function initFreePlay() {
+            fpState.pegs = [[], [], []];
+            for (let i = config.numDisks - 1; i >= 0; i--) {
+                fpState.pegs[0].push(i);
+            }
+            fpState.selectedPeg = null;
+            fpState.moves = 0;
+            fpMessage.innerHTML = "";
+            fpCanvas.classList.remove('won-game');
+            fpMovesDisplay.innerText = `Moves: 0 / Minimum: ${Math.pow(2, config.numDisks) - 1}`;
+            
+            renderFreePlayDisks();
+        }
+
+        function renderFreePlayDisks() {
+            fpCanvas.querySelectorAll('.disk').forEach(el => el.remove());
+            const maxWidth = 28;
+            const minWidth = 8;
+            const heightPx = 24;
+
+            for (let d = config.numDisks - 1; d >= 0; d--) {
+                const diskEl = document.createElement('div');
+                diskEl.className = 'disk fp-disk';
+                diskEl.id = `fp-disk-${d}`;
+                diskEl.innerText = d;
+                diskEl.style.backgroundColor = config.diskColors[d % config.diskColors.length];
+                
+                const sizeRatio = config.numDisks > 1 ? d / (config.numDisks - 1) : 1;
+                const widthPercent = minWidth + (maxWidth - minWidth) * sizeRatio;
+                diskEl.style.width = `${widthPercent}%`;
+                diskEl.style.height = `${heightPx}px`;
+
+                diskEl.style.transition = 'bottom 0.2s ease, left 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease';
+
+                fpCanvas.appendChild(diskEl);
+            }
+            positionFreePlayDisks();
+        }
+
+        function positionFreePlayDisks() {
+            const heightPx = 24;
+            const gapPx = 2;
+            const bottomOffsetBase = 56;
+
+            for (let p = 0; p < 3; p++) {
+                const pegStack = fpState.pegs[p];
+                for (let i = 0; i < pegStack.length; i++) {
+                    const diskId = pegStack[i];
+                    const diskEl = document.getElementById(`fp-disk-${diskId}`);
+                    if (!diskEl) continue;
+
+                    const pegCenterPercent = (100 / 6) + (100 / 3) * p;
+                    diskEl.style.left = `${pegCenterPercent}%`;
+                    
+                    let bottomPx = bottomOffsetBase + i * (heightPx + gapPx);
+                    
+                    if (fpState.selectedPeg === p && i === pegStack.length - 1) {
+                        bottomPx += 30; // Visually lift the selected disk
+                        diskEl.style.boxShadow = '0 0 15px var(--accent-color)';
+                    } else {
+                        diskEl.style.boxShadow = 'inset 0 -3px 0 rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.3)';
+                    }
+
+                    diskEl.style.bottom = `${bottomPx}px`;
+                    diskEl.style.transform = `translateX(-50%) translateY(0)`; 
+                }
+            }
+        }
+
+        function handleFpPegClick(pegIndex) {
+            // Prevent moves if the game is already won
+            if (fpState.pegs[2].length === config.numDisks) return;
+
+            if (fpState.selectedPeg === null) {
+                // Try to select a disk from the clicked peg
+                if (fpState.pegs[pegIndex].length > 0) {
+                    fpState.selectedPeg = pegIndex;
+                    positionFreePlayDisks();
+                }
+            } else {
+                if (fpState.selectedPeg === pegIndex) {
+                    // Deselect if clicking the same peg again
+                    fpState.selectedPeg = null;
+                    positionFreePlayDisks();
+                } else {
+                    const sourceStack = fpState.pegs[fpState.selectedPeg];
+                    const targetStack = fpState.pegs[pegIndex];
+                    
+                    const movingDisk = sourceStack[sourceStack.length - 1];
+                    const topTargetDisk = targetStack.length > 0 ? targetStack[targetStack.length - 1] : Infinity;
+
+                    // Ensure move is valid: can't place larger disk on smaller disk
+                    if (movingDisk < topTargetDisk) {
+                        targetStack.push(sourceStack.pop());
+                        fpState.moves++;
+                        fpState.selectedPeg = null;
+                        fpMovesDisplay.innerText = `Moves: ${fpState.moves} / Minimum: ${Math.pow(2, config.numDisks) - 1}`;
+                        positionFreePlayDisks();
+                        
+                        // Check for win condition
+                        if (targetStack.length === config.numDisks && pegIndex === 2) {
+                            const minMoves = Math.pow(2, config.numDisks) - 1;
+                            fpCanvas.classList.add('won-game');
+                            if (fpState.moves === minMoves) {
+                                fpMessage.innerHTML = "<span class='win-text'>🎉 Perfect! Solved in minimum moves! 🎉</span>";
+                            } else {
+                                fpMessage.innerHTML = `<span class='win-text'>🎉 Great job! Solved in ${fpState.moves} moves! 🎉</span>`;
+                            }
+                        }
+                    } else {
+                        // Invalid move, shake the disk
+                        const diskEl = document.getElementById(`fp-disk-${movingDisk}`);
+                        if(diskEl) {
+                            diskEl.classList.add('shake');
+                            setTimeout(() => diskEl.classList.remove('shake'), 400);
+                        }
+                    }
+                }
+            }
+        }
+
+    </script>
+</body>
+</html>
