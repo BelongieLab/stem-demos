@@ -78,6 +78,18 @@ export default function Home() {
               Embark on a journey into infinite complexity arising from a very simple rule, featuring a fully interactive WebGL explorer mode.
             </p>
           </a>
+
+          <a 
+            href="/newtons-method.html" 
+            className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-emerald-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
+          >
+            <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-emerald-400 transition-colors">
+              Newton's Method
+            </h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              Discover how to calculate square roots without a calculator by using calculus and tangent lines to rapidly zero in on the answer.
+            </p>
+          </a>
           
           {/* Future demos will go here! */}
           
