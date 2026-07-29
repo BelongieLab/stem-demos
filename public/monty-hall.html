@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Monty Hall Problem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Include GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --accent-color: #38bdf8;
+            --door-color: #64748b;
+            --door-hover: #94a3b8;
+            --door-selected: #fcd34d;
+            --door-open: #334155;
+            --success: #4ade80;
+            --danger: #f87171;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 {
+            font-weight: 800;
+            letter-spacing: -0.025em;
+        }
+
+        .math {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-color);
+        }
+
+        /* Scrollytelling Layout */
+        .scrolly-container {
+            display: flex;
+            position: relative;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .steps-container {
+            width: 50%;
+            padding: 2rem;
+            z-index: 10;
+        }
+
+        .step {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0.2;
+            transition: opacity 0.5s ease;
+            padding: 2rem 0;
+        }
+
+        .step.is-active {
+            opacity: 1;
+        }
+
+        .step p {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .visual-container {
+            width: 50%;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            flex-direction: column;
+        }
+
+        /* Interactive Doors */
+        .stage {
+            display: flex;
+            gap: 1rem;
+            width: 100%;
+            max-width: 600px;
+            justify-content: center;
+            perspective: 1000px;
+        }
+
+        .door-wrapper {
+            position: relative;
+            width: 120px;
+            height: 180px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .door-wrapper:hover .door {
+            border-color: var(--door-hover);
+        }
+
+        .door-wrapper.selectable:hover {
+            transform: translateY(-5px);
+        }
+
+        .door {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--door-color);
+            border: 4px solid var(--door-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--bg-color);
+            transform-origin: left;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+            z-index: 2;
+            box-shadow: inset -5px 0 15px rgba(0,0,0,0.2), 5px 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .door::after {
+            content: '';
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+
+        .door.selected {
+            background-color: var(--door-selected);
+            border-color: var(--door-selected);
+        }
+
+        .door.open {
+            transform: rotateY(-110deg);
+        }
+
+        .prize {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--door-open);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            z-index: 1;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* Annotations */
+        .annotation {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-color);
+            color: var(--bg-color);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            font-size: 0.875rem;
+            opacity: 0;
+            white-space: nowrap;
+            transition: opacity 0.3s;
+        }
+
+        .probability-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #1e293b;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+            position: absolute;
+            bottom: -20px;
+            opacity: 0;
+        }
+
+        .probability-bar {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Tree Diagram */
+        #tree-diagram {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Intro Section */
+        .intro {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .intro h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--accent-color), #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Table Visualization */
+        .table-vis {
+            opacity: 0;
+            position: absolute;
+            width: 100%;
+            max-width: 500px;
+            border-collapse: collapse;
+            font-size: 1.1rem;
+        }
+        
+        .table-vis th, .table-vis td {
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .table-vis th {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent-color);
+        }
+
+        .table-row {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        /* 9 Doors Visualization */
+        .mini-door {
+            width: calc(30% - 10px);
+            aspect-ratio: 2/3;
+            background-color: var(--door-color);
+            border: 2px solid var(--door-color);
+            border-radius: 4px;
+            transition: all 0.4s ease;
+        }
+
+        .mini-door.selected {
+            background-color: var(--door-selected);
+            border-color: var(--door-selected);
+            transform: scale(1.1);
+            z-index: 2;
+        }
+
+        .mini-door.open {
+            background-color: transparent;
+            border-color: rgba(255, 255, 255, 0.1);
+            opacity: 0.2;
+            transform: scale(0.9);
+        }
+
+        .mini-door.remaining {
+            background-color: var(--success);
+            border-color: var(--success);
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(74, 222, 128, 0.5);
+            z-index: 2;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .scrolly-container {
+                flex-direction: column-reverse;
+            }
+            .steps-container {
+                width: 100%;
+                padding: 1rem;
+            }
+            .visual-container {
+                width: 100%;
+                height: 50vh;
+                position: sticky;
+                top: 0;
+                z-index: 5;
+                background: var(--bg-color);
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            .step {
+                min-height: auto;
+                margin-bottom: 50vh;
+            }
+            .stage {
+                gap: 0.5rem;
+            }
+            .door-wrapper {
+                width: 80px;
+                height: 120px;
+            }
+            .door {
+                font-size: 2rem;
+                border-width: 2px;
+            }
+            .prize {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="intro">
+    <h1>The Monty Hall Problem</h1>
+    <p class="text-xl max-w-2xl text-gray-400">A classic problem in probability that continues to confuse intuition. Scroll to unpack the math.</p>
+    <div class="mt-8 animate-bounce text-gray-500">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+    </div>
+</div>
+
+<div class="scrolly-container">
+    <!-- Left Column: Text Steps -->
+    <div class="steps-container">
+        
+        <div class="step" id="step-1">
+            <h2 class="text-3xl mb-4 text-blue-400">The Setup</h2>
+            <p>Imagine you're on a game show. Before you are three identical doors.</p>
+            <p>Behind one door is a brand new car 🚗. Behind the other two doors are goats 🐐.</p>
+            <p>You want the car. The host asks you to pick a door.</p>
+        </div>
+
+        <div class="step" id="step-2">
+            <h2 class="text-3xl mb-4 text-blue-400">Your Choice</h2>
+            <p>Let's say you pick <strong>Door No. 1</strong>.</p>
+            <p>At this point, you have a <span class="math">1/3</span> chance of having picked the car, and a <span class="math">2/3</span> chance of having picked a goat.</p>
+            <p>Simple enough.</p>
+        </div>
+
+        <div class="step" id="step-3">
+            <h2 class="text-3xl mb-4 text-blue-400">The Twist</h2>
+            <p>The host, who knows what is behind every door, doesn't open your door right away.</p>
+            <p>Instead, he walks over to the other two unchosen doors and opens one of them to reveal a <strong>goat</strong>.</p>
+            <p>(He can always do this, because there are two goats. Even if you picked a goat, there is still one goat left among the other doors).</p>
+        </div>
+
+        <div class="step" id="step-4">
+            <h2 class="text-3xl mb-4 text-blue-400">The Question</h2>
+            <p>The host turns to you and asks: <em>"Do you want to stick with your original choice, or do you want to switch to the other closed door?"</em></p>
+            <p>What should you do? Does it matter?</p>
+        </div>
+
+        <div class="step" id="step-5">
+            <h2 class="text-3xl mb-4 text-blue-400">The Intuitive Trap</h2>
+            <p>Most people's intuition screams: <em>"It doesn't matter! There are two doors left, one has a car, one has a goat. It's a <span class="math">50/50</span> chance."</em></p>
+            <p>This feels right because we usually assume unknown options are equally likely.</p>
+            <p>But the host's action was <strong>not random</strong>. Let's look at the probabilities.</p>
+        </div>
+
+        <div class="step" id="step-6">
+            <h2 class="text-3xl mb-4 text-blue-400">The Original State</h2>
+            <p>Let's group the doors. Originally, your chosen Door 1 had a <span class="math">1/3</span> chance of containing the car.</p>
+            <p>The <em>other</em> group (Doors 2 and 3 combined) had a <span class="math">2/3</span> chance.</p>
+        </div>
+
+        <div class="step" id="step-7">
+            <h2 class="text-3xl mb-4 text-blue-400">The Host's Constraint</h2>
+            <p>When the host opens a door with a goat, he is <strong>giving you information</strong> about that <span class="math">2/3</span> group.</p>
+            <p>He is essentially saying: "If the car is in this group of two doors (which happens 66% of the time), it's specifically behind <em>this</em> closed one."</p>
+            <p>The <span class="math">2/3</span> probability doesn't disappear; it collapses onto the remaining closed door.</p>
+        </div>
+
+        <div class="step" id="step-8">
+            <h2 class="text-3xl mb-4 text-blue-400">Listing the Outcomes</h2>
+            <p>Let's look at all possible scenarios if you choose Door 1 and decide to <strong>switch</strong>.</p>
+            <ul class="list-disc pl-6 space-y-2 mb-4 text-lg">
+                <li><span class="text-red-400">Scenario A:</span> Car is behind Door 1. Host opens 2 or 3. You switch. <strong>You Lose.</strong> (Happens <span class="math">1/3</span> of the time)</li>
+            </ul>
+        </div>
+
+        <div class="step" id="step-9">
+            <ul class="list-disc pl-6 space-y-2 mb-4 text-lg">
+                <li><span class="text-green-400">Scenario B:</span> Car is behind Door 2. Host <em>must</em> open Door 3. You switch to 2. <strong>You Win!</strong> (Happens <span class="math">1/3</span> of the time)</li>
+            </ul>
+        </div>
+
+        <div class="step" id="step-10">
+            <ul class="list-disc pl-6 space-y-2 mb-4 text-lg">
+                <li><span class="text-green-400">Scenario C:</span> Car is behind Door 3. Host <em>must</em> open Door 2. You switch to 3. <strong>You Win!</strong> (Happens <span class="math">1/3</span> of the time)</li>
+            </ul>
+            <p>If you switch, you win in 2 out of 3 scenarios.</p>
+        </div>
+
+        <div class="step" id="step-11">
+            <h2 class="text-3xl mb-4 text-blue-400">The Conclusion</h2>
+            <p>By switching, you are essentially betting that your original choice was wrong.</p>
+            <p>Since your original choice was a goat <span class="math">2/3</span> of the time, betting against it wins <span class="math">2/3</span> of the time.</p>
+            <p>You should <strong>always switch</strong>. It doubles your chances of winning from <span class="math">33.3%</span> to <span class="math">66.7%</span>.</p>
+        </div>
+        
+        <div class="step" id="step-12">
+            <h2 class="text-3xl mb-4 text-blue-400">Exaggerating the Problem</h2>
+            <p>If 3 doors still feel like a 50/50 trick, let's exaggerate the scenario to build better intuition.</p>
+            <p>Imagine there are <strong>9 doors</strong> instead of 3. Behind one is a car; behind 8 are goats.</p>
+        </div>
+
+        <div class="step" id="step-13">
+            <h2 class="text-3xl mb-4 text-blue-400">The Long Shot</h2>
+            <p>You randomly pick Door No. 1.</p>
+            <p>Your chance of guessing right on the first try is exactly <span class="math">1/9</span>.</p>
+            <p>The chance that the car is hidden somewhere among the <em>other 8 doors</em> is a massive <span class="math">8/9</span>.</p>
+        </div>
+
+        <div class="step" id="step-14">
+            <h2 class="text-3xl mb-4 text-blue-400">The Host's Purge</h2>
+            <p>The host, who knows exactly where the car is, now opens <strong>7</strong> of those other doors to reveal 7 goats.</p>
+            <p>He leaves only your door and one other door (say, Door No. 7) closed.</p>
+        </div>
+
+        <div class="step" id="step-15">
+            <h2 class="text-3xl mb-4 text-blue-400">The Obvious Switch</h2>
+            <p>He asks: <em>"Do you want to switch?"</em> Now the illusion breaks.</p>
+            <p>It's highly improbable that you guessed right on your ~11% first try. The host just did the hard work of filtering out the 7 goats from the 8/9 group.</p>
+            <p>That remaining door inherited the entire probability. It holds an <span class="math">8/9</span> (about 89%) chance. You definitely switch.</p>
+        </div>
+        
+        <div class="step" id="step-16">
+            <h2 class="text-3xl mb-4 text-blue-400">Try it yourself</h2>
+            <p>Still don't believe it? The best way to build intuition is to play. I've enabled interactions on the original 3 doors.</p>
+            <p>Pick a door, wait for the host to reveal a goat, then click your final choice.</p>
+            <div class="flex gap-4 mt-6">
+                <button id="reset-game" class="bg-gray-700 hover:bg-gray-600 px-6 py-3 rounded-lg font-bold transition-colors">Reset Game</button>
+            </div>
+            <div class="mt-4 p-4 bg-slate-800 rounded-lg">
+                <p class="mb-2 text-sm text-gray-400 uppercase tracking-wide">Stats (Current Session)</p>
+                <div class="flex justify-between items-center mb-2">
+                    <span>Stay Wins:</span>
+                    <span id="stay-wins" class="font-mono text-xl text-blue-400">0</span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span>Switch Wins:</span>
+                    <span id="switch-wins" class="font-mono text-xl text-green-400">0</span>
+                </div>
+                 <div class="flex justify-between items-center">
+                    <span>Total Games:</span>
+                    <span id="total-games" class="font-mono text-xl">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Sticky Visuals -->
+    <div class="visual-container">
+        
+        <!-- The Doors -->
+        <div class="stage" id="main-stage">
+            <div class="door-wrapper" id="dw-1" data-id="1">
+                <div class="annotation" id="anno-1">Chosen</div>
+                <div class="prize" id="prize-1">🐐</div>
+                <div class="door" id="door-1">1</div>
+                <div class="probability-bar-container"><div class="probability-bar" id="prob-1"></div></div>
+            </div>
+            
+            <div class="door-wrapper" id="dw-2" data-id="2">
+                <div class="annotation" id="anno-2">Unchosen</div>
+                <div class="prize" id="prize-2">🚗</div>
+                <div class="door" id="door-2">2</div>
+                <div class="probability-bar-container"><div class="probability-bar" id="prob-2"></div></div>
+            </div>
+            
+            <div class="door-wrapper" id="dw-3" data-id="3">
+                <div class="annotation" id="anno-3">Unchosen</div>
+                <div class="prize" id="prize-3">🐐</div>
+                <div class="door" id="door-3">3</div>
+                <div class="probability-bar-container"><div class="probability-bar" id="prob-3"></div></div>
+            </div>
+        </div>
+
+        <!-- 9 Doors Visualization (Hidden initially) -->
+        <div class="stage" id="many-doors-stage" style="display: none; opacity: 0; flex-wrap: wrap; gap: 10px; max-width: 450px; justify-content: center;">
+            <!-- JS will populate this -->
+        </div>
+
+        <!-- Table Visualization (Hidden initially) -->
+        <table class="table-vis" id="truth-table">
+            <thead>
+                <tr>
+                    <th>Car Location</th>
+                    <th>Host Opens</th>
+                    <th>Switch Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="table-row" id="row-1">
+                    <td>Door 1 (1/3)</td>
+                    <td>2 or 3</td>
+                    <td class="text-red-400 font-bold">Lose</td>
+                </tr>
+                <tr class="table-row" id="row-2">
+                    <td>Door 2 (1/3)</td>
+                    <td>Door 3</td>
+                    <td class="text-green-400 font-bold">Win</td>
+                </tr>
+                <tr class="table-row" id="row-3">
+                    <td>Door 3 (1/3)</td>
+                    <td>Door 2</td>
+                    <td class="text-green-400 font-bold">Win</td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+<script>
+    // Register ScrollTrigger
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Initial State variables
+    let carDoor = 2; // Hardcode for the tutorial flow
+    let userInitialChoice = 1; // Hardcode for tutorial
+    
+    // Elements
+    const doors = [
+        document.getElementById('door-1'),
+        document.getElementById('door-2'),
+        document.getElementById('door-3')
+    ];
+    const wrappers = [
+        document.getElementById('dw-1'),
+        document.getElementById('dw-2'),
+        document.getElementById('dw-3')
+    ];
+    const annotations = [
+        document.getElementById('anno-1'),
+        document.getElementById('anno-2'),
+        document.getElementById('anno-3')
+    ];
+    const probBarsContainers = document.querySelectorAll('.probability-bar-container');
+    const probBars = [
+        document.getElementById('prob-1'),
+        document.getElementById('prob-2'),
+        document.getElementById('prob-3')
+    ];
+    const stage = document.getElementById('main-stage');
+    const manyDoorsStage = document.getElementById('many-doors-stage');
+    const truthTable = document.getElementById('truth-table');
+    const tableRows = document.querySelectorAll('.table-row');
+
+    // Initialize 9 doors for the generalization step
+    for(let i=0; i<9; i++) {
+        let el = document.createElement('div');
+        el.className = 'mini-door';
+        manyDoorsStage.appendChild(el);
+    }
+    const miniDoors = document.querySelectorAll('.mini-door');
+
+    // Helper functions for visual states
+    function resetDoors() {
+        gsap.to(doors, { rotateY: 0, backgroundColor: 'var(--door-color)', borderColor: 'var(--door-color)', duration: 0.5 });
+        gsap.to(annotations, { opacity: 0, duration: 0.3 });
+        gsap.to(probBarsContainers, { opacity: 0, duration: 0.3 });
+        doors.forEach(d => d.classList.remove('selected', 'open'));
+    }
+
+    function selectDoor(index) {
+        doors[index].classList.add('selected');
+        annotations[index].innerText = "Your Pick";
+        gsap.to(annotations[index], { opacity: 1, backgroundColor: 'var(--door-selected)', color: 'black' });
+    }
+
+    function openDoor(index) {
+        doors[index].classList.add('open');
+        annotations[index].innerText = "Host Opens";
+        gsap.to(annotations[index], { opacity: 1, backgroundColor: 'var(--door-open)', color: 'white' });
+    }
+
+    function showProbabilities(probs) {
+        gsap.to(probBarsContainers, { opacity: 1, duration: 0.3 });
+        probs.forEach((p, i) => {
+            gsap.to(probBars[i], { width: `${p}%`, duration: 0.8, ease: "power2.out" });
+        });
+    }
+
+    // Set up active classes for text steps
+    const steps = document.querySelectorAll('.step');
+    steps.forEach((step, i) => {
+        ScrollTrigger.create({
+            trigger: step,
+            start: "top 60%",
+            end: "bottom 60%",
+            onToggle: self => {
+                if (self.isActive) {
+                    step.classList.add('is-active');
+                } else {
+                    step.classList.remove('is-active');
+                }
+            }
+        });
+    });
+
+    // Master timeline connected to scroll position isn't great for discrete steps.
+    // Instead, trigger specific functions based on which step is active.
+
+    ScrollTrigger.create({
+        trigger: "#step-1",
+        start: "top center",
+        onEnter: () => {
+            gsap.to(stage, { opacity: 1, display: 'flex' });
+            gsap.to(truthTable, { opacity: 0, display: 'none' });
+            resetDoors();
+            interactiveMode = false;
+        },
+        onEnterBack: () => {
+            resetDoors();
+        }
+    });
+
+    ScrollTrigger.create({
+        trigger: "#step-2",
+        start: "top center",
+        onEnter: () => {
+            resetDoors();
+            selectDoor(0); // Select Door 1
+            showProbabilities([33.3, 33.3, 33.3]);
+        },
+        onEnterBack: () => {
+            resetDoors();
+            selectDoor(0);
+            showProbabilities([33.3, 33.3, 33.3]);
+            gsap.to(wrappers[1], { x: 0 });
+            gsap.to(wrappers[2], { x: 0 });
+        }
+    });
+
+    ScrollTrigger.create({
+        trigger: "#step-3",
+        start: "top center",
+        onEnter: () => {
+            openDoor(2); // Host opens Door 3
+            showProbabilities([33.3, 33.3, 0]);
+        },
+        onEnterBack: () => {
+            resetDoors();
+            selectDoor(0);
+            openDoor(2);
+            showProbabilities([33.3, 33.3, 0]);
+            gsap.to(probBars[1], { backgroundColor: 'var(--accent-color)' });
+        }
+    });
+
+    ScrollTrigger.create({
+        trigger: "#step-5", // Intuitive trap
+        start: "top center",
+        onEnter: () => {
+            // Visualize the incorrect 50/50 assumption
+            gsap.to(probBars[0], { width: '50%', backgroundColor: '#f87171', duration: 1 });
+            gsap.to(probBars[1], { width: '50%', backgroundColor: '#f87171', duration: 1 });
+        },
+        onEnterBack: () => {
+             gsap.to(stage, { opacity: 1, display: 'flex', duration: 0.5 });
+             gsap.to(truthTable, { opacity: 0, display: 'none', duration: 0.2 });
+        }
+    });
+
+    ScrollTrigger.create({
+        trigger: "#step-6", // The Original State Grouping
+        start: "top center",
+        onEnter: () => {
+            // Fix probs back to reality
+            gsap.to(probBars[0], { width: '33.3%', backgroundColor: 'var(--accent-color)', duration: 0.5 });
+            gsap.to(probBars[1], { width: '33.3%', backgroundColor: 'var(--accent-color)', duration: 0.5 });
+            
+            // Visual grouping: shift doors slightly
+            gsap.to(wrappers[1], { x: -10, duration: 0.5 });
+            gsap.to(wrappers[2], { x: -10, duration: 0.5 });
+            
+            annotations[1].innerText = "2/3 Chance Together";
+            gsap.to(annotations[1], { opacity: 1, backgroundColor: '#818cf8', width: '250px', zIndex: 10 });
+        }
+    });
+
+    ScrollTrigger.create({
+        trigger: "#step-7", // Collapse
+        start: "top center",
+        onEnter: () => {
+            // Animate probability flowing from Door 3 to Door 2
+            gsap.to(probBars[1], { width: '66.7%', backgroundColor: '#4ade80', duration: 1, ease: "power2.out" });
+            annotations[1].innerText = "Now 2/3 Chance!";
+        }
+    });
+
+    ScrollTrigger.create({
+        trigger: "#step-8", // List outcomes
+        start: "top center",
+        onEnter: () => {
+            gsap.to(stage, { opacity: 0, display: 'none', duration: 0.5 });
+            gsap.to(truthTable, { opacity: 1, display: 'table', duration: 0.5 });
+            gsap.set(tableRows, { opacity: 0, y: 10 });
+            gsap.to(tableRows[0], { opacity: 1, y: 0, duration: 0.5, delay: 0.5 });
+        },
+        onEnterBack: () => {
+            gsap.to(stage, { opacity: 0, display: 'none', duration: 0.5 });
+            gsap.to(truthTable, { opacity: 1, display: 'table', duration: 0.5 });
+            gsap.set(tableRows, { opacity: 0, y: 10 });
+            gsap.to(tableRows[0], { opacity: 1, y: 0, duration: 0.5 });
+        }
+    });
+
+    ScrollTrigger.create({
+        trigger: "#step-9",
+        start: "top center",
+        onEnter: () => gsap.to(tableRows[1], { opacity: 1, y: 0, duration: 0.5 })
+    });
+
+    ScrollTrigger.create({
+        trigger: "#step-10",
+        start: "top center",
+        onEnter: () => gsap.to(tableRows[2], { opacity: 1, y: 0, duration: 0.5 }),
+        onEnterBack: () => {
+             gsap.to(stage, { opacity: 0, display: 'none' });
+             gsap.to(truthTable, { opacity: 1, display: 'table' });
+        }
+    });
+
+    ScrollTrigger.create({
+        trigger: "#step-12",
+        start: "top center",
+        onEnter: () => {
+            gsap.to(truthTable, { opacity: 0, display: 'none', duration: 0.3 });
+            gsap.to(stage, { opacity: 0, display: 'none', duration: 0.3 });
+            gsap.to(manyDoorsStage, { opacity: 1, display: 'flex', duration: 0.5 });
+            miniDoors.forEach(d => d.className = 'mini-door');
+        },
+        onEnterBack: () => {
+            gsap.to(truthTable, { opacity: 0, display: 'none', duration: 0.3 });
+            gsap.to(stage, { opacity: 0, display: 'none', duration: 0.3 });
+            gsap.to(manyDoorsStage, { opacity: 1, display: 'flex', duration: 0.5 });
+            miniDoors.forEach(d => d.className = 'mini-door');
+        }
+    });
+
+    ScrollTrigger.create({
+        trigger: "#step-13",
+        start: "top center",
+        onEnter: () => {
+            miniDoors.forEach(d => d.className = 'mini-door');
+            miniDoors[0].classList.add('selected');
+        },
+        onEnterBack: () => {
+            miniDoors.forEach(d => d.className = 'mini-door');
+            miniDoors[0].classList.add('selected');
+        }
+    });
+
+    ScrollTrigger.create({
+        trigger: "#step-14",
+        start: "top center",
+        onEnter: () => {
+            let delay = 0;
+            miniDoors.forEach((d, i) => {
+                if (i !== 0 && i !== 6) {
+                    setTimeout(() => d.classList.add('open'), delay);
+                    delay += 100; // Staggered opening effect, slowed down for 9 doors
+                }
+            });
+        },
+        onEnterBack: () => {
+            miniDoors.forEach((d, i) => {
+                if (i !== 0 && i !== 6) d.classList.remove('open');
+                d.classList.remove('remaining');
+            });
+        }
+    });
+
+    ScrollTrigger.create({
+        trigger: "#step-15",
+        start: "top center",
+        onEnter: () => {
+            miniDoors[6].classList.add('remaining');
+        },
+        onEnterBack: () => {
+            miniDoors[6].classList.remove('remaining');
+        }
+    });
+
+    ScrollTrigger.create({
+        trigger: "#step-16",
+        start: "top center",
+        onEnter: () => {
+            gsap.to(manyDoorsStage, { opacity: 0, display: 'none', duration: 0.3 });
+            gsap.to(stage, { opacity: 1, display: 'flex', duration: 0.5 });
+            startInteractiveGame();
+        },
+        onEnterBack: () => {
+            gsap.to(stage, { opacity: 0, display: 'none', duration: 0.3 });
+            gsap.to(manyDoorsStage, { opacity: 1, display: 'flex', duration: 0.5 });
+            interactiveMode = false;
+        }
+    });
+
+    let interactiveMode = false;
+    let gameState = 'waiting_for_pick'; // waiting_for_pick, waiting_for_switch, game_over
+    let currentCarDoor = Math.floor(Math.random() * 3);
+    let userInteractiveChoice = null;
+    let hostOpenedDoor = null;
+
+    // Stats
+    let stayWins = 0;
+    let switchWins = 0;
+    let totalGames = 0;
+
+    function initInteractiveStage() {
+        currentCarDoor = Math.floor(Math.random() * 3);
+        
+        // Update DOM for new car position
+        document.querySelectorAll('.prize').forEach((el, index) => {
+            el.innerText = (index === currentCarDoor) ? '🚗' : '🐐';
+        });
+
+        resetDoors();
+        gsap.to(wrappers[1], { x: 0 }); // reset layout
+        gsap.to(wrappers[2], { x: 0 });
+        
+        // Make doors look clickable
+        wrappers.forEach(w => w.classList.add('selectable'));
+        
+        gameState = 'waiting_for_pick';
+        userInteractiveChoice = null;
+        hostOpenedDoor = null;
+    }
+
+    function startInteractiveGame() {
+        interactiveMode = true;
+        initInteractiveStage();
+    }
+
+    wrappers.forEach((wrapper, index) => {
+        wrapper.addEventListener('click', () => {
+            if (!interactiveMode) return;
+
+            if (gameState === 'waiting_for_pick') {
+                // User picks initial door
+                userInteractiveChoice = index;
+                selectDoor(index);
+                
+                // Host logic
+                let possibleHostDoors = [0, 1, 2].filter(d => d !== userInteractiveChoice && d !== currentCarDoor);
+                hostOpenedDoor = possibleHostDoors[Math.floor(Math.random() * possibleHostDoors.length)];
+                
+                setTimeout(() => {
+                    openDoor(hostOpenedDoor);
+                    gameState = 'waiting_for_switch';
+                    // Highlight remaining closed doors
+                    wrappers.forEach((w, i) => {
+                        if(i !== hostOpenedDoor) w.classList.add('pulse');
+                    });
+                }, 800);
+
+            } else if (gameState === 'waiting_for_switch') {
+                if (index === hostOpenedDoor) return; // Can't pick open door
+                
+                let finalChoice = index;
+                let switched = finalChoice !== userInteractiveChoice;
+                
+                // Open all doors
+                [0,1,2].forEach(i => openDoor(i));
+                
+                // Determine win
+                let won = (finalChoice === currentCarDoor);
+                
+                // Update stats
+                totalGames++;
+                if (switched && won) switchWins++;
+                if (!switched && won) stayWins++;
+                
+                document.getElementById('total-games').innerText = totalGames;
+                document.getElementById('switch-wins').innerText = switchWins;
+                document.getElementById('stay-wins').innerText = stayWins;
+
+                // Visual feedback
+                if(won) {
+                    annotations[finalChoice].innerText = "WINNER!";
+                    gsap.to(annotations[finalChoice], {backgroundColor: '#4ade80'});
+                } else {
+                    annotations[finalChoice].innerText = "LOSE";
+                    gsap.to(annotations[finalChoice], {backgroundColor: '#f87171'});
+                    // Show where car was
+                    annotations[currentCarDoor].innerText = "CAR WAS HERE";
+                    gsap.to(annotations[currentCarDoor], {opacity:1});
+                }
+                
+                wrappers.forEach(w => w.classList.remove('selectable', 'pulse'));
+                gameState = 'game_over';
+            }
+        });
+    });
+
+    document.getElementById('reset-game').addEventListener('click', () => {
+        if(interactiveMode) initInteractiveStage();
+    });
+
+</script>
+</body>
+</html>
