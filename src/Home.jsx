@@ -80,7 +80,7 @@ export default function Home() {
           </a>
 
           <a 
-            href="/newtons-method.html" 
+            href="/newton-root.html" 
             className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-emerald-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
           >
             <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-emerald-400 transition-colors">
