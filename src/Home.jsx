@@ -55,6 +55,18 @@ export default function Home() {
             </p>
           </a>
 
+          <a 
+            href="/towers-of-hanoi.html" 
+            className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-purple-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
+          >
+            <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-purple-400 transition-colors">
+              Towers of Hanoi
+            </h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              Explore recursion, exponential growth, and binary counting through this classic interactive mathematical puzzle.
+            </p>
+          </a>
+          
           {/* Future demos will go here! */}
           
         </div>
