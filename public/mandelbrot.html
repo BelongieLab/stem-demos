@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Mandelbrot Set: A Journey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- KaTeX CSS and Scripts -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #111;
+            color: #eee;
+            overflow-x: hidden;
+        }
+
+        /* The canvas is fixed in the background */
+        #mandelbrot-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            /* Start with a slight blur for dramatic effect */
+            filter: blur(4px);
+            transition: filter 1s ease-in-out, opacity 1s ease-in-out;
+            opacity: 0.8;
+        }
+
+        #mandelbrot-canvas.focused {
+            filter: blur(0px);
+            opacity: 1;
+        }
+
+        /* Overlay canvas for 2D orbit animations */
+        #overlay-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 5; /* Between the fractal and the text */
+            pointer-events: none;
+        }
+
+        /* Scrollytelling narrative container */
+        #story-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Individual text blocks (steps) */
+        .step {
+            min-height: 100vh; /* Each step takes at least full viewport height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.1; /* Initial state for intersection observer */
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            transform: translateY(20px);
+        }
+
+        .step.is-active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Styling the text boxes to float nicely over the canvas */
+        .content-box {
+            background: rgba(20, 20, 25, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1, h2 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        h1 { font-size: 3rem; }
+        h2 { font-size: 2rem; }
+
+        p {
+            font-size: 1.125rem;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+            color: #d1d5db;
+        }
+
+        .math-block {
+            background: rgba(0,0,0,0.5);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            font-size: 1.25rem;
+            color: #93c5fd;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Adjust KaTeX colors slightly to fit the theme */
+        .katex {
+            color: #93c5fd;
+        }
+        
+        /* Add a subtle grid overlay for a "mathy" feel initially */
+        #grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 1;
+            pointer-events: none;
+            transition: opacity 1s;
+        }
+        
+        .hide-grid #grid-overlay {
+            opacity: 0;
+        }
+
+        /* --- NEW: Explorer Mode Styles --- */
+        body.explorer-mode {
+            overflow: hidden; /* Lock webpage scroll */
+        }
+
+        body.explorer-mode #mandelbrot-canvas {
+            z-index: 30; /* Bring canvas to the very front */
+            touch-action: none; /* Prevent browser from intercepting mobile gestures */
+            cursor: grab;
+        }
+
+        body.explorer-mode #mandelbrot-canvas:active {
+            cursor: grabbing;
+        }
+
+        body.explorer-mode #story-container {
+            opacity: 0; /* Hide the story text */
+            pointer-events: none; /* Ensure it blocks nothing */
+            transition: opacity 0.5s;
+        }
+        /* --------------------------------- */
+
+        /* Controls for manual exploration at the end */
+        #controls {
+            position: fixed;
+            bottom: -100px; /* Hidden initially */
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 1rem 2rem;
+            border-radius: 2rem;
+            z-index: 50;
+            display: flex;
+            gap: 1rem;
+            transition: bottom 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        #controls.visible {
+            bottom: 20px;
+        }
+
+        button {
+            background: transparent;
+            color: white;
+            border: 1px solid #4b5563;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #374151;
+            border-color: #6b7280;
+        }
+        
+        /* Mobile adjustments */
+        @media (max-width: 640px) {
+            h1 { font-size: 2.25rem; }
+            h2 { font-size: 1.5rem; }
+            .content-box { padding: 1.5rem; }
+            .math-block { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- The Canvas that will render the fractal -->
+    <canvas id="mandelbrot-canvas"></canvas>
+    <canvas id="overlay-canvas"></canvas>
+    <div id="grid-overlay"></div>
+
+    <!-- The Scrollytelling Narrative -->
+    <div id="story-container">
+        
+        <!-- Step 0: Title -->
+        <div class="step" data-step="0">
+            <div class="content-box text-center">
+                <h1>The Mandelbrot Set</h1>
+                <p>Scroll down to embark on a journey into infinite complexity arising from a very simple rule.</p>
+                <div class="animate-bounce mt-8 text-gray-500">
+                    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: The Complex Plane -->
+        <div class="step" data-step="1">
+            <div class="content-box">
+                <h2>The Complex Plane</h2>
+                <p>Imagine a flat, infinite grid. This is the complex plane.</p>
+                <p>Unlike a normal grid where coordinates are just two numbers $(x, y)$, here, every point represents a single <strong>Complex Number</strong>.</p>
+                <p>The horizontal axis is the real part, and the vertical axis is the imaginary part. We call a point here $c$.</p>
+            </div>
+        </div>
+
+        <!-- Step 2: The Equation -->
+        <div class="step" data-step="2">
+            <div class="content-box">
+                <h2>A Simple Rule</h2>
+                <p>To draw the Mandelbrot set, we pick a point $c$ on this plane and run it through a very specific, simple repeating process.</p>
+                <div class="math-block">
+                    $$z_{n+1} = z_n^2 + c$$
+                </div>
+                <p>We start with $z_0 = 0$.</p>
+                <ul class="list-disc pl-5 mb-4 text-gray-300">
+                    <li>First step: $z_1 = 0^2 + c = c$</li>
+                    <li>Second step: $z_2 = c^2 + c$</li>
+                    <li>Third step: $z_3 = (c^2 + c)^2 + c$</li>
+                </ul>
+                <p>...and we keep doing this over and over.</p>
+            </div>
+        </div>
+
+        <!-- Step 3: Escaping or Bounded -->
+        <div class="step" data-step="3">
+            <div class="content-box">
+                <h2>The Escape Radius</h2>
+                <p>As we repeat this calculation, one of two things happens to our sequence of numbers:</p>
+                <ol class="list-decimal pl-5 mb-4 text-gray-300">
+                    <li class="mb-2"><strong>It stays trapped:</strong> The sequence dances around, but never crosses a strict boundary.</li>
+                    <li><strong>It escapes:</strong> Its distance from the center gets larger and larger, rocketing off towards infinity.</li>
+                </ol>
+                <p>Mathematically, it is proven that once the magnitude (distance from zero) of our number is strictly greater than 2, it is guaranteed to accelerate toward infinity. We write this limit as:</p>
+                <div class="math-block">
+                    $$|z| > 2$$
+                </div>
+                <p>The Mandelbrot set is simply the collection of all starting points $c$ where the sequence <strong>never</strong> exceeds this boundary.</p>
+            </div>
+        </div>
+
+        <!-- Step 4: Escaping c=1 -->
+        <div class="step" data-step="4">
+            <div class="content-box">
+                <h2>Escaping to Infinity</h2>
+                <p>Let's test our rule by plugging in $c = 1$. We always start at $z_0 = 0$.</p>
+                <ul class="list-disc pl-5 mb-4 text-gray-300">
+                    <li>$z_1 = 0^2 + 1 = 1$</li>
+                    <li>$z_2 = 1^2 + 1 = 2$</li>
+                    <li>$z_3 = 2^2 + 1 = 5$</li>
+                </ul>
+                <p>The sequence rockets outward. By step 3, its distance from the center is 5, safely past our red escape boundary of 2. It has escaped, so $c = 1$ is <strong>not</strong> in the Mandelbrot set.</p>
+            </div>
+        </div>
+
+        <!-- Step 5: Trapped c=-1 -->
+        <div class="step" data-step="5">
+            <div class="content-box">
+                <h2>A Trapped Orbit</h2>
+                <p>Now, let's test $c = -1$.</p>
+                <ul class="list-disc pl-5 mb-4 text-gray-300">
+                    <li>$z_1 = 0^2 - 1 = -1$</li>
+                    <li>$z_2 = (-1)^2 - 1 = 0$</li>
+                    <li>$z_3 = 0^2 - 1 = -1$</li>
+                </ul>
+                <p>The sequence endlessly bounces back and forth between $0$ and $-1$. It will never cross the escape radius, staying trapped forever. Therefore, $c = -1$ <strong>is</strong> in the Mandelbrot set.</p>
+            </div>
+        </div>
+        
+        <!-- Step 6: Complex c -->
+        <div class="step" data-step="6">
+            <div class="content-box">
+                <h2>Entering the Complex</h2>
+                <p>What happens when we pick a point with an imaginary part? Let's test $c = -0.12 + 0.74i$.</p>
+                <p>The arithmetic works exactly the same, but now the values of $z$ jump across both axes of the 2D plane. Watch how this specific sequence settles into a beautiful, repeating triangular orbit.</p>
+                <p>Because this geometric orbit is perfectly stable and never spirals past the boundary of 2, this complex point also belongs to the set.</p>
+            </div>
+        </div>
+
+        <!-- Step 7: Visualizing -->
+        <div class="step" data-step="7">
+            <div class="content-box">
+                <h2>Coloring the Chaos</h2>
+                <p>If we run this test for every single point on the complex plane...</p>
+                <p>Points that stay trapped (like $c = -1$ and $c = -0.12 + 0.74i$) are colored <strong>black</strong>. These form the main body of the set.</p>
+                <p>For the points that escape (like $c = 1$), we color them based on <strong>how many steps</strong> it takes for $|z|$ to strictly exceed $2$. A point that escapes in 3 steps might be dark blue, while one that takes 50 steps might be bright yellow.</p>
+            </div>
+        </div>
+
+        <!-- Step 8: Zooming In -->
+        <div class="step" data-step="8">
+            <div class="content-box">
+                <h2>Infinite Detail</h2>
+                <p>Because we map the escape speed to a continuous color gradient, the boundaries of the set burst into intricate, swirling patterns.</p>
+                <p>The defining feature of a fractal like this is <strong>self-similarity</strong>. As you zoom in, you don't just find blur; you find more structure, more spirals, and even miniature copies of the entire set itself.</p>
+            </div>
+        </div>
+
+        <!-- Step 9: Explore -->
+        <div class="step" data-step="9">
+            <div class="content-box text-center">
+                <h2>Explore for Yourself</h2>
+                <p>You've reached the end of the guided tour, but the Mandelbrot set is infinite.</p>
+                <p>Enter Explorer Mode to take full control. You can <strong>click and drag</strong> to pan, and <strong>double-click</strong>, <strong>scroll</strong>, or <strong>pinch</strong> to zoom into the infinite boundary.</p>
+                
+                <button id="btn-enter-explorer" class="mt-6 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-full shadow-lg shadow-blue-500/30 transition transform hover:scale-105">
+                    Enter Explorer Mode
+                </button>
+            </div>
+        </div>
+
+        <!-- Extra space to allow scrolling past the last step -->
+        <div style="height: 50vh;"></div>
+    </div>
+
+    <!-- Interactive Controls (Hidden during scroll, shown at end) -->
+    <div id="controls">
+        <button id="btn-exit-explorer" class="bg-red-600/50 hover:bg-red-500/80 border-red-400 font-bold">← Exit Explorer</button>
+        <button id="btn-reset">Reset View</button>
+        <button id="btn-zoom-in">Zoom In</button>
+        <button id="btn-zoom-out">Zoom Out</button>
+        <div class="text-xs text-gray-400 flex items-center ml-4 hidden sm:flex">
+            (Double-click/Pinch to zoom, drag to pan)
+        </div>
+    </div>
+
+    <script>
+        // WebGL is essential here for performance. Drawing pixel-by-pixel in 
+        // vanilla Canvas 2D is too slow for smooth zooming/panning.
+
+        const vertexShaderSource = `
+            attribute vec2 a_position;
+            varying vec2 v_coord;
+            void main() {
+                // Map position from [-1, 1] to [0, 1] for fragment shader coords
+                v_coord = a_position * 0.5 + 0.5;
+                gl_Position = vec4(a_position, 0.0, 1.0);
+            }
+        `;
+
+        const fragmentShaderSource = `
+            precision highp float;
+            varying vec2 v_coord;
+            
+            uniform vec2 u_resolution;
+            uniform vec2 u_centerHi;
+            uniform vec2 u_centerLo;
+            uniform float u_zoom;
+            uniform int u_maxIterations;
+            uniform float u_colorOffset; // Used for animating colors
+            
+            // --- Emulated 64-bit Double Precision Math ---
+            vec2 split(float a) {
+                float t = a * 4097.0; // 2^12 + 1
+                float hi = t - (t - a);
+                float lo = a - hi;
+                return vec2(hi, lo);
+            }
+            
+            vec2 twoSum(float a, float b) {
+                float s = a + b;
+                float v = s - a;
+                float e = (a - (s - v)) + (b - v);
+                return vec2(s, e);
+            }
+            
+            vec2 twoProd(float a, float b) {
+                float p = a * b;
+                vec2 aS = split(a);
+                vec2 bS = split(b);
+                float err = ((aS.x * bS.x - p) + aS.y * bS.x + aS.x * bS.y) + aS.y * bS.y;
+                return vec2(p, err);
+            }
+            
+            vec2 dfAdd(vec2 a, vec2 b) {
+                vec2 s = twoSum(a.x, b.x);
+                s.y += a.y + b.y;
+                float s1 = s.x + s.y;
+                float s2 = s.y - (s1 - s.x);
+                return vec2(s1, s2);
+            }
+            
+            vec2 dfSub(vec2 a, vec2 b) {
+                return dfAdd(a, vec2(-b.x, -b.y));
+            }
+            
+            vec2 dfMul(vec2 a, vec2 b) {
+                vec2 p = twoProd(a.x, b.x);
+                p.y += a.x * b.y + a.y * b.x;
+                float s1 = p.x + p.y;
+                float s2 = p.y - (s1 - p.x);
+                return vec2(s1, s2);
+            }
+            // ---------------------------------------------
+
+            // Helper function to map a value from one range to another
+            float map(float value, float min1, float max1, float min2, float max2) {
+                return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
+            }
+
+            // A smooth coloring palette function
+            vec3 palette(float t) {
+                vec3 a = vec3(0.5, 0.5, 0.5);
+                vec3 b = vec3(0.5, 0.5, 0.5);
+                vec3 c = vec3(1.0, 1.0, 1.0);
+                vec3 d = vec3(0.0, 0.33, 0.67);
+                return a + b * cos(6.28318 * (c * t + d + u_colorOffset));
+            }
+
+            void main() {
+                // Determine aspect ratio to keep shapes circular, not stretched
+                float aspect = u_resolution.x / u_resolution.y;
+                
+                // Convert screen pixels into high-precision offsets
+                vec2 cx_offset = vec2((v_coord.x - 0.5) * aspect / u_zoom, 0.0);
+                vec2 cy_offset = vec2((v_coord.y - 0.5) / u_zoom, 0.0);
+                
+                // Add the offset to the precise center coordinate using double math
+                vec2 cx = dfAdd(vec2(u_centerHi.x, u_centerLo.x), cx_offset);
+                vec2 cy = dfAdd(vec2(u_centerHi.y, u_centerLo.y), cy_offset);
+                
+                vec2 zx = vec2(0.0, 0.0);
+                vec2 zy = vec2(0.0, 0.0);
+                
+                float n = 0.0;
+                float maxIter = float(u_maxIterations);
+                
+                float zx_val = 0.0;
+                float zy_val = 0.0;
+                
+                // The Mandelbrot iteration using double-precision arithmetic
+                for (int i = 0; i < 2000; i++) {
+                    if (i >= u_maxIterations) break;
+                    
+                    // Complex squaring: (x + iy)^2 = x^2 - y^2 + i(2xy)
+                    vec2 zx2 = dfMul(zx, zx);
+                    vec2 zy2 = dfMul(zy, zy);
+                    vec2 zx_zy = dfMul(zx, zy);
+                    vec2 two_zx_zy = dfAdd(zx_zy, zx_zy);
+                    
+                    zx = dfAdd(dfSub(zx2, zy2), cx);
+                    zy = dfAdd(two_zx_zy, cy);
+                    
+                    zx_val = zx.x; // Extract upper bits for magnitude check
+                    zy_val = zy.x;
+                    
+                    if ((zx_val * zx_val + zy_val * zy_val) > 4.0) {
+                        break;
+                    }
+                    n += 1.0;
+                }
+                
+                // Smooth coloring math
+                if (n == maxIter) {
+                    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+                } else {
+                    float log_z = log(zx_val*zx_val + zy_val*zy_val) / 2.0;
+                    float nu = log(log_z / 0.6931471805599453) / 0.6931471805599453;
+                    float n_smooth = n + 1.0 - nu;
+                    
+                    float t = n_smooth / maxIter;
+                    t = sqrt(t);
+                    
+                    vec3 color = palette(t * 3.0);
+                    gl_FragColor = vec4(color, 1.0);
+                }
+            }
+        `;
+
+        const canvas = document.getElementById('mandelbrot-canvas');
+        const gl = canvas.getContext('webgl');
+
+        if (!gl) {
+            alert("Your browser does not support WebGL, which is required for this visualization.");
+        }
+
+        // Helper to compile shaders
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+            if (success) return shader;
+            console.error(gl.getShaderInfoLog(shader));
+            gl.deleteShader(shader);
+        }
+
+        // Helper to create program
+        function createProgram(gl, vertexShader, fragmentShader) {
+            const program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            const success = gl.getProgramParameter(program, gl.LINK_STATUS);
+            if (success) return program;
+            console.error(gl.getProgramInfoLog(program));
+            gl.deleteProgram(program);
+        }
+
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+        const program = createProgram(gl, vertexShader, fragmentShader);
+
+        // Look up locations
+        const positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+        const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
+        const centerHiUniformLocation = gl.getUniformLocation(program, "u_centerHi");
+        const centerLoUniformLocation = gl.getUniformLocation(program, "u_centerLo");
+        const zoomUniformLocation = gl.getUniformLocation(program, "u_zoom");
+        const maxIterationsUniformLocation = gl.getUniformLocation(program, "u_maxIterations");
+        const colorOffsetUniformLocation = gl.getUniformLocation(program, "u_colorOffset");
+
+        // Create a buffer for a full-screen quad
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        const positions = [
+            -1, -1,
+             1, -1,
+            -1,  1,
+            -1,  1,
+             1, -1,
+             1,  1,
+        ];
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+        // State variables
+        let state = {
+            targetCenter: { x: -0.5, y: 0.0 },
+            currentCenter: { x: -0.5, y: 0.0 },
+            targetZoom: 0.4,
+            currentZoom: 0.4,
+            maxIterations: 100,
+            colorOffset: 0,
+            inExplorerMode: false // Replaces isInteractive
+        };
+
+        // Resize handler
+        function resizeCanvasToDisplaySize(canvas) {
+            const displayWidth  = canvas.clientWidth;
+            const displayHeight = canvas.clientHeight;
+
+            if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+                canvas.width  = displayWidth;
+                canvas.height = displayHeight;
+                gl.viewport(0, 0, canvas.width, canvas.height);
+                return true;
+            }
+            return false;
+        }
+
+        // Helper to split a standard 64-bit float into two 32-bit floats for WebGL
+        function splitDouble(val) {
+            const f32 = new Float32Array(1);
+            f32[0] = val;
+            return { hi: f32[0], lo: val - f32[0] };
+        }
+
+        const overlayCanvas = document.getElementById('overlay-canvas');
+        const ctx = overlayCanvas.getContext('2d');
+        let currentOrbitC = null;
+        let orbitAnimationTime = 0;
+
+        // Maps complex coordinates to screen pixel coordinates
+        function cToScreen(c) {
+            const aspect = canvas.width / canvas.height;
+            const sx = canvas.width * (0.5 + (c.x - state.currentCenter.x) * state.currentZoom / aspect);
+            const sy = canvas.height * (0.5 - (c.y - state.currentCenter.y) * state.currentZoom);
+            return {x: sx, y: sy};
+        }
+
+        // Render loop
+        let lastTime = 0;
+        function render(time) {
+            time *= 0.001; // convert to seconds
+            const deltaTime = time - lastTime;
+            lastTime = time;
+
+            resizeCanvasToDisplaySize(canvas);
+
+            // Smoothly interpolate current values towards target values (Ease-out)
+            const lerpFactor = 0.05; // Speed of camera movement
+            
+            // Linear interpolation for center
+            state.currentCenter.x += (state.targetCenter.x - state.currentCenter.x) * lerpFactor;
+            state.currentCenter.y += (state.targetCenter.y - state.currentCenter.y) * lerpFactor;
+            
+            // Logarithmic interpolation for zoom is better since we zoom exponentially
+            state.currentZoom = Math.exp(
+                Math.log(state.currentZoom) + 
+                (Math.log(state.targetZoom) - Math.log(state.currentZoom)) * lerpFactor
+            );
+
+            // Slowly animate colors if not in a deep zoom to avoid flickering
+            if(state.currentZoom < 10) {
+                 state.colorOffset += deltaTime * 0.05;
+            }
+
+            gl.useProgram(program);
+            gl.enableVertexAttribArray(positionAttributeLocation);
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+            // Split the high-precision Javascript coordinates for the Shader
+            const cx = splitDouble(state.currentCenter.x);
+            const cy = splitDouble(state.currentCenter.y);
+
+            // Set uniforms
+            gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
+            gl.uniform2f(centerHiUniformLocation, cx.hi, cy.hi);
+            gl.uniform2f(centerLoUniformLocation, cx.lo, cy.lo);
+            gl.uniform1f(zoomUniformLocation, state.currentZoom);
+            gl.uniform1i(maxIterationsUniformLocation, state.maxIterations);
+            gl.uniform1f(colorOffsetUniformLocation, state.colorOffset);
+
+            // Draw
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+            // --- 2D OVERLAY DRAWING ---
+            resizeCanvasToDisplaySize(overlayCanvas);
+            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            
+            if (currentOrbitC !== null) {
+                orbitAnimationTime += deltaTime;
+                
+                // Draw origin axes
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                const origin = cToScreen({x: 0, y: 0});
+                ctx.moveTo(0, origin.y); ctx.lineTo(overlayCanvas.width, origin.y);
+                ctx.moveTo(origin.x, 0); ctx.lineTo(origin.x, overlayCanvas.height);
+                ctx.stroke();
+
+                // Draw escape circle (Radius = 2)
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                const radiusPx = 2.0 * state.currentZoom * overlayCanvas.height;
+                ctx.arc(origin.x, origin.y, radiusPx, 0, 2 * Math.PI);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Calculate orbit sequence mathematically
+                let z = {x: 0, y: 0};
+                let orbit = [z];
+                for(let i = 0; i < 20; i++) {
+                    // z^2 + c 
+                    let nx = z.x * z.x - z.y * z.y + currentOrbitC.x;
+                    let ny = 2 * z.x * z.y + currentOrbitC.y;
+                    z = {x: nx, y: ny};
+                    orbit.push(z);
+                    if (z.x * z.x + z.y * z.y > 25) break; // Allow it to fly off slightly for visual effect before culling
+                }
+
+                // Draw orbit lines
+                let pointsPerSec = 1.5;
+                let currentIdx = Math.floor(orbitAnimationTime * pointsPerSec);
+                let t = (orbitAnimationTime * pointsPerSec) % 1.0;
+
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)'; // Light blue
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                for(let i = 0; i <= Math.min(currentIdx, orbit.length - 1); i++) {
+                    let p = cToScreen(orbit[i]);
+                    if(i === 0) ctx.moveTo(p.x, p.y);
+                    else ctx.lineTo(p.x, p.y);
+                }
+
+                // Interpolate the moving segment (Ease-out cubic for snappy jumps)
+                if (currentIdx < orbit.length - 1) {
+                    let p1 = cToScreen(orbit[currentIdx]);
+                    let p2 = cToScreen(orbit[currentIdx + 1]);
+                    let smoothT = 1 - Math.pow(1 - t, 3); 
+                    let interpX = p1.x + (p2.x - p1.x) * smoothT;
+                    let interpY = p1.y + (p2.y - p1.y) * smoothT;
+                    ctx.lineTo(interpX, interpY);
+                }
+                ctx.stroke();
+
+                // Draw solid dots at visited points
+                ctx.fillStyle = '#38bdf8';
+                for(let i = 0; i <= Math.min(currentIdx, orbit.length - 1); i++) {
+                    let p = cToScreen(orbit[i]);
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+                
+                // Draw the leading animated dot
+                if (currentIdx < orbit.length - 1) {
+                    let p1 = cToScreen(orbit[currentIdx]);
+                    let p2 = cToScreen(orbit[currentIdx + 1]);
+                    let smoothT = 1 - Math.pow(1 - t, 3);
+                    let interpX = p1.x + (p2.x - p1.x) * smoothT;
+                    let interpY = p1.y + (p2.y - p1.y) * smoothT;
+                    
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(interpX, interpY, 5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // Draw math subscript text label
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    ctx.font = '14px Inter, sans-serif';
+                    ctx.fillText('z' + (currentIdx + 1), interpX + 10, interpY - 10);
+                }
+
+                // Draw and highlight the starting point c
+                let cp = cToScreen(currentOrbitC);
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath();
+                ctx.arc(cp.x, cp.y, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                
+                ctx.fillStyle = '#facc15';
+                ctx.font = 'bold 16px Inter, sans-serif';
+                ctx.fillText('c', cp.x + 10, cp.y + 20);
+            }
+
+            requestAnimationFrame(render);
+        }
+        
+        requestAnimationFrame(render);
+
+        // Define views for each step of the story
+        const views = [
+            // Step 0: Overview, slight blur
+            { center: { x: -0.5, y: 0.0 }, zoom: 0.35, iter: 50 },
+            // Step 1: The Plane
+            { center: { x: -0.5, y: 0.0 }, zoom: 0.4, iter: 50 },
+            // Step 2: The Equation
+            { center: { x: -0.75, y: 0.0 }, zoom: 0.6, iter: 60 },
+            // Step 3: Escape Radius
+            { center: { x: 0.0, y: 0.0 }, zoom: 0.25, iter: 100 },
+            // Step 4: Escaping c=1
+            { center: { x: 0.0, y: 0.0 }, zoom: 0.25, iter: 100 },
+            // Step 5: Trapped c=-1
+            { center: { x: 0.0, y: 0.0 }, zoom: 0.25, iter: 100 },
+            // Step 6: Complex c
+            { center: { x: 0.0, y: 0.0 }, zoom: 0.25, iter: 100 },
+            // Step 7: Coloring
+            { center: { x: 0.28, y: 0.008 }, zoom: 5.0, iter: 150 },
+            // Step 8: Zooming In
+            { center: { x: -0.7436438870371587, y: 0.13182590420531197 }, zoom: 150.0, iter: 400 },
+            // Step 9: Interactive
+            { center: { x: -1.7693831791955150, y: 0.00423684791873677 }, zoom: 500.0, iter: 600 }
+        ];
+
+        // Setup Intersection Observer to trigger view changes based on scrolling
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.5 // Trigger when 50% of the step is visible
+        };
+
+        const steps = document.querySelectorAll('.step');
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // Make text visible
+                    steps.forEach(s => s.classList.remove('is-active'));
+                    entry.target.classList.add('is-active');
+
+                    // Get step index and update camera target
+                    const stepIndex = parseInt(entry.target.getAttribute('data-step'));
+                    const view = views[stepIndex];
+                    
+                    if (view) {
+                        state.targetCenter = view.center;
+                        state.targetZoom = view.zoom;
+                        state.maxIterations = view.iter;
+                    }
+                    
+                    // Trigger orbit animations based on the specific steps
+                    if (stepIndex === 4) { currentOrbitC = {x: 1, y: 0}; orbitAnimationTime = 0; }
+                    else if (stepIndex === 5) { currentOrbitC = {x: -1, y: 0}; orbitAnimationTime = 0; }
+                    else if (stepIndex === 6) { currentOrbitC = {x: -0.12, y: 0.74}; orbitAnimationTime = 0; }
+                    else { currentOrbitC = null; }
+
+                    // Special UI logic based on steps
+                    if (stepIndex > 0) {
+                        canvas.classList.add('focused');
+                        document.body.classList.add('hide-grid');
+                    } else {
+                        canvas.classList.remove('focused');
+                        document.body.classList.remove('hide-grid');
+                    }
+
+                    // Enable interactivity and show controls on the last step
+                    const controls = document.getElementById('controls');
+                    if (stepIndex === views.length - 1) {
+                        // Just prepare the end state, wait for user to click "Enter Explorer"
+                    } else {
+                        // If they scroll back up, force exit explorer mode
+                        exitExplorerMode();
+                    }
+                }
+            });
+        }, observerOptions);
+
+        steps.forEach(step => observer.observe(step));
+
+        // --- NEW: Robust Pointer Events & Explorer Mode Logic ---
+
+        const btnEnter = document.getElementById('btn-enter-explorer');
+        const btnExit = document.getElementById('btn-exit-explorer');
+        const controls = document.getElementById('controls');
+
+        function enterExplorerMode() {
+            state.inExplorerMode = true;
+            document.body.classList.add('explorer-mode');
+            controls.classList.add('visible');
+        }
+
+        function exitExplorerMode() {
+            state.inExplorerMode = false;
+            document.body.classList.remove('explorer-mode');
+            controls.classList.remove('visible');
+            pointers.clear(); // Reset touches
+        }
+
+        btnEnter.addEventListener('click', enterExplorerMode);
+        btnExit.addEventListener('click', exitExplorerMode);
+
+        const MAX_ZOOM = 10000000000.0; // Cap zoom to prevent blockiness
+
+        // Unified pointers map for mouse, touch, and pen
+        const pointers = new Map();
+        let initialPinchDist = 0;
+        let initialPinchZoom = 1.0;
+
+        // 1. Pointer Down
+        canvas.addEventListener('pointerdown', (e) => {
+            if (!state.inExplorerMode) return;
+            
+            // Capture the pointer so events keep firing even if the mouse leaves the canvas bounds
+            canvas.setPointerCapture(e.pointerId);
+            pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        });
+
+        // 2. Pointer Move (Panning and Pinching)
+        canvas.addEventListener('pointermove', (e) => {
+            if (!state.inExplorerMode || !pointers.has(e.pointerId)) return;
+
+            const prev = pointers.get(e.pointerId);
+
+            if (pointers.size === 1) {
+                // Single pointer: PANNING
+                const dx = e.clientX - prev.x;
+                const dy = e.clientY - prev.y;
+
+                const aspect = canvas.width / canvas.height;
+                // Convert screen pixels to complex plane coordinates
+                const moveX = (dx / canvas.width) * (aspect / state.targetZoom);
+                const moveY = (dy / canvas.height) * (1.0 / state.targetZoom);
+
+                state.targetCenter.x -= moveX;
+                state.targetCenter.y += moveY;
+
+                // Update current so it doesn't smooth-glide back if currently animating
+                state.currentCenter.x -= moveX;
+                state.currentCenter.y += moveY;
+                
+                // Save new position
+                pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+            } else if (pointers.size === 2) {
+                // Two pointers: PINCH ZOOMING
+                pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                
+                const pts = Array.from(pointers.values());
+                const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+                
+                if (initialPinchDist > 0) {
+                    const zoomFactor = dist / initialPinchDist;
+                    state.targetZoom = Math.min(initialPinchZoom * zoomFactor, MAX_ZOOM);
+                    
+                    // Dynamically increase iterations as we zoom in
+                    let iterScale = Math.log10(Math.max(1, state.targetZoom));
+                    state.maxIterations = Math.min(2000, 100 + iterScale * 150);
+                } else {
+                    initialPinchDist = dist;
+                    initialPinchZoom = state.targetZoom;
+                }
+            }
+        });
+
+        // 3. Pointer Up / Cancel
+        const handlePointerUp = (e) => {
+            pointers.delete(e.pointerId);
+            if (pointers.size < 2) {
+                initialPinchDist = 0; // Reset pinch memory when fingers are lifted
+            }
+        };
+
+        canvas.addEventListener('pointerup', handlePointerUp);
+        canvas.addEventListener('pointercancel', handlePointerUp);
+
+        // 4. Double Click (Mouse specific, but highly requested for desktop)
+        canvas.addEventListener('dblclick', (e) => {
+            if (!state.inExplorerMode) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const aspect = canvas.width / canvas.height;
+            
+            // Find what complex coordinate the user clicked on
+            const clickC_X = (x / canvas.width - 0.5) * aspect / state.targetZoom + state.targetCenter.x;
+            const clickC_Y = (0.5 - y / canvas.height) / state.targetZoom + state.targetCenter.y;
+
+            // Shift center halfway towards click for a smooth targeted zoom
+            state.targetCenter.x += (clickC_X - state.targetCenter.x) * 0.5;
+            state.targetCenter.y += (clickC_Y - state.targetCenter.y) * 0.5;
+            
+            state.targetZoom = Math.min(state.targetZoom * 2.0, MAX_ZOOM);
+            state.maxIterations = Math.min(2000, state.maxIterations + 20);
+        });
+
+        // 5. Mouse Wheel (Scroll to zoom)
+        canvas.addEventListener('wheel', (e) => {
+            if (!state.inExplorerMode) return;
+            e.preventDefault(); // Prevent accidental page scrolling
+            
+            // Determine zoom direction and speed
+            const zoomSpeed = 0.002;
+            const zoomFactor = Math.exp(-e.deltaY * zoomSpeed);
+            
+            // Get mouse position relative to canvas
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const aspect = canvas.width / canvas.height;
+            
+            // 1. Find the complex coordinate exactly under the mouse right now
+            const clickC_X = (x / canvas.width - 0.5) * aspect / state.targetZoom + state.targetCenter.x;
+            const clickC_Y = (0.5 - y / canvas.height) / state.targetZoom + state.targetCenter.y;
+
+            // 2. Apply the zoom
+            state.targetZoom = Math.min(state.targetZoom * zoomFactor, MAX_ZOOM);
+            
+            // 3. Adjust the center so that the same complex coordinate stays under the mouse
+            state.targetCenter.x = clickC_X - (x / canvas.width - 0.5) * aspect / state.targetZoom;
+            state.targetCenter.y = clickC_Y - (0.5 - y / canvas.height) / state.targetZoom;
+            
+            // Adjust iterations dynamically based on depth
+            let iterScale = Math.log10(Math.max(1, state.targetZoom));
+            state.maxIterations = Math.min(2000, 100 + iterScale * 150);
+        }, { passive: false }); // Passive: false is required to use e.preventDefault()
+
+        // Button Controls
+        document.getElementById('btn-zoom-in').addEventListener('click', () => {
+            state.targetZoom = Math.min(state.targetZoom * 1.5, MAX_ZOOM);
+            state.maxIterations = Math.min(2000, state.maxIterations + 20);
+        });
+
+        document.getElementById('btn-zoom-out').addEventListener('click', () => {
+            state.targetZoom /= 1.5;
+            state.maxIterations = Math.max(50, state.maxIterations - 20);
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            state.targetCenter = { x: -0.5, y: 0.0 };
+            state.targetZoom = 0.4;
+            state.maxIterations = 100;
+        });
+
+    </script>
+</body>
+</html>
