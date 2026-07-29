@@ -66,6 +66,18 @@ export default function Home() {
               Explore recursion, exponential growth, and binary counting through this classic interactive mathematical puzzle.
             </p>
           </a>
+
+          <a 
+            href="/mandelbrot.html" 
+            className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-indigo-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
+          >
+            <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-indigo-400 transition-colors">
+              The Mandelbrot Set
+            </h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              Embark on a journey into infinite complexity arising from a very simple rule, featuring a fully interactive WebGL explorer mode.
+            </p>
+          </a>
           
           {/* Future demos will go here! */}
           
