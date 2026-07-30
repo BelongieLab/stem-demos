@@ -102,6 +102,18 @@ export default function Home() {
               A classic probability puzzle. Unpack the math behind the infamous game show scenario through interactive scrollytelling and a live simulator.
             </p>
           </a>
+
+          <a 
+            href="/taylor-series.html" 
+            className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-pink-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
+          >
+            <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-pink-400 transition-colors">
+              Visualizing Taylor Series
+            </h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              Discover how computers calculate functions like sine and cosine by building polynomial approximations step-by-step using Taylor Series.
+            </p>
+          </a>
           
           {/* Future demos will go here! */}
           
