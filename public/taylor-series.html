@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizing Taylor Series</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #f8fafc; /* Slate 50 */
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        #graphic-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Fixed graphic section */
+        #chart-section {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 0;
+            /* Grid layout to make space for text on large screens */
+        }
+
+        @media (min-width: 768px) {
+            #chart-section {
+                width: 60%;
+                float: right;
+            }
+        }
+
+        /* Scrolling text section */
+        #text-section {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            padding-bottom: 20vh;
+        }
+
+        @media (min-width: 768px) {
+            #text-section {
+                width: 40%;
+                padding-left: 2rem;
+            }
+        }
+
+        .step {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 2rem 1rem;
+            opacity: 0.2;
+            transition: opacity 0.5s ease;
+        }
+
+        .step.is-active {
+            opacity: 1;
+        }
+
+        .step-content {
+            background-color: rgba(30, 41, 59, 0.85); /* Slate 800 with opacity */
+            backdrop-filter: blur(8px);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid #334155; /* Slate 700 */
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        /* D3 Chart Styles */
+        svg {
+            width: 100%;
+            height: 100%;
+            max-height: 80vh;
+        }
+
+        .axis-line { stroke: #475569; stroke-width: 1px; } /* Slate 600 */
+        .grid-line { stroke: #1e293b; stroke-width: 1px; } /* Slate 800 */
+        .tick text { fill: #94a3b8; font-size: 12px; } /* Slate 400 */
+        
+        .line-target { 
+            fill: none; 
+            stroke: #38bdf8; /* Sky 400 */
+            stroke-width: 3px; 
+            stroke-dasharray: 5,5;
+            opacity: 0.6;
+        }
+        
+        .line-approx { 
+            fill: none; 
+            stroke: #f472b6; /* Pink 400 */
+            stroke-width: 4px; 
+            stroke-linecap: round;
+        }
+        
+        .point-center {
+            fill: #fbbf24; /* Amber 400 */
+            stroke: #0f172a;
+            stroke-width: 2px;
+        }
+
+        /* Formula display */
+        .formula-display {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            border: 1px solid #334155;
+            font-size: 1.25rem;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .term-new { color: #f472b6; font-weight: bold; }
+        .term-old { color: #94a3b8; }
+        .term-target { color: #38bdf8; }
+
+        /* Smooth mathjax transitions */
+        .mjx-chtml { transition: color 0.3s ease; }
+    </style>
+</head>
+<body>
+    <div id="graphic-container">
+        
+        <!-- Sticky visualization area -->
+        <div id="chart-section">
+            <div id="vis" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative;">
+                <!-- D3 will render SVG here -->
+                <div class="formula-display hidden md:flex" id="formula-container">
+                    <div id="math-target">$$f(x) = \sin(x)$$</div>
+                    <div id="math-approx">$$P_0(x) = 0$$</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scrolling text steps -->
+        <div id="text-section">
+            <div class="step" data-index="0">
+                <div class="step-content">
+                    <h1 class="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-pink-400">The Power of Polynomials</h1>
+                    <p class="text-lg leading-relaxed text-slate-300">
+                        Functions like \(\sin(x)\), \(\cos(x)\), or \(e^x\) are essential in mathematics, but how do computers actually calculate them?
+                    </p>
+                    <p class="text-lg leading-relaxed text-slate-300 mt-4">
+                        Computers only really know how to add, subtract, multiply, and divide. Enter the <strong>Taylor Series</strong>: a brilliant mathematical tool that lets us approximate complicated functions using only polynomials.
+                    </p>
+                    <p class="text-lg leading-relaxed text-slate-300 mt-4 border-l-4 border-sky-400 pl-4 bg-slate-800/50 py-2">
+                        Let our target function be <strong>\(f(x)\)</strong>. Our goal is to build a polynomial approximation, step-by-step, which we will call <strong>\(P(x)\)</strong>.
+                    </p>
+                    <p class="text-sm text-slate-400 mt-6 animate-pulse">Scroll down to explore &darr;</p>
+                </div>
+            </div>
+
+            <div class="step" data-index="1">
+                <div class="step-content">
+                    <h2 class="text-2xl font-semibold mb-3 text-sky-400">The Target: Sine Wave</h2>
+                    <p class="text-lg leading-relaxed text-slate-300 mb-4">
+                        Let's start with a target function: \(f(x) = \sin(x)\). This is the blue dashed line on the right.
+                    </p>
+                    <p class="text-lg leading-relaxed text-slate-300">
+                        Our goal is to build a polynomial that mimics this wave around a specific point, often called the <em>center</em>. We'll use \(x = 0\) (Maclaurin series) as our center, marked by the yellow dot.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step" data-index="2">
+                <div class="step-content">
+                    <h2 class="text-2xl font-semibold mb-3 text-pink-400">Degree 0: Just a point</h2>
+                    <p class="text-lg leading-relaxed text-slate-300 mb-4">
+                        The simplest approximation is a flat horizontal line (a degree 0 polynomial).
+                    </p>
+                    <p class="text-lg leading-relaxed text-slate-300">
+                        We want our approximation, let's call it \(P(x)\), to exactly match the value of \(f(x)\) at our center point \(x = 0\).
+                    </p>
+                    <div class="bg-slate-900 p-4 rounded mt-4 overflow-x-auto border border-slate-700">
+                        $$P_0(x) = f(0) = \sin(0) = 0$$
+                    </div>
+                    <p class="text-lg leading-relaxed text-slate-300 mt-4">
+                        It's a terrible approximation everywhere except exactly at \(x = 0\).
+                    </p>
+                </div>
+            </div>
+
+            <div class="step" data-index="3">
+                <div class="step-content">
+                    <h2 class="text-2xl font-semibold mb-3 text-pink-400">Degree 1: Matching the Slope</h2>
+                    <p class="text-lg leading-relaxed text-slate-300 mb-4">
+                        To make it better, let's match the <em>slope</em> (the first derivative) at \(x=0\).
+                    </p>
+                    <p class="text-lg leading-relaxed text-slate-300">
+                        The derivative of \(\sin(x)\) is \(\cos(x)\), and \(\cos(0) = 1\). So we add a term with a slope of 1.
+                    </p>
+                    <div class="bg-slate-900 p-4 rounded mt-4 overflow-x-auto border border-slate-700">
+                        $$P_1(x) = 0 + \frac{f'(0)}{1!}x = x$$
+                    </div>
+                    <p class="text-lg leading-relaxed text-slate-300 mt-4">
+                        This is the tangent line. It's a good approximation near the center, but it diverges quickly.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step" data-index="4">
+                <div class="step-content">
+                    <h2 class="text-2xl font-semibold mb-3 text-pink-400">Degree 3: Adding Curvature</h2>
+                    <p class="text-lg leading-relaxed text-slate-300 mb-4">
+                        Let's match the second derivative. For sine, \(f''(0) = -\sin(0) = 0\). So the \(x^2\) term is zero! 
+                    </p>
+                    <p class="text-lg leading-relaxed text-slate-300 mb-4">
+                        Moving to the third derivative: \(f'''(0) = -\cos(0) = -1\). We add an \(x^3\) term, divided by 3! (3 factorial).
+                    </p>
+                    <div class="bg-slate-900 p-4 rounded mt-4 overflow-x-auto border border-slate-700 text-sm md:text-base">
+                        $$P_3(x) = x - \frac{x^3}{3!}$$
+                    </div>
+                    <p class="text-lg leading-relaxed text-slate-300 mt-4">
+                        Notice how the pink line now bends to "hug" the sine wave much further out!
+                    </p>
+                </div>
+            </div>
+            
+            <div class="step" data-index="5">
+                <div class="step-content">
+                    <h2 class="text-2xl font-semibold mb-3 text-pink-400">Degree 5: Reversing Direction</h2>
+                    <p class="text-lg leading-relaxed text-slate-300 mb-4">
+                        Because all even derivatives of sine at 0 are zero, our series only has odd powers.
+                    </p>
+                    <p class="text-lg leading-relaxed text-slate-300">
+                        The signs alternate. The next term pulls the curve back up.
+                    </p>
+                    <div class="bg-slate-900 p-4 rounded mt-4 overflow-x-auto border border-slate-700 text-sm md:text-base">
+                        $$P_5(x) = x - \frac{x^3}{3!} + \frac{x^5}{5!}$$
+                    </div>
+                </div>
+            </div>
+
+            <div class="step" data-index="6">
+                <div class="step-content">
+                    <h2 class="text-2xl font-semibold mb-3 text-pink-400">Degree 13: A Remarkable Fit</h2>
+                    <p class="text-lg leading-relaxed text-slate-300 mb-4">
+                        As we keep adding terms, dividing by increasingly huge factorials, the polynomial begins to perfectly map over the sine wave.
+                    </p>
+                    <div class="bg-slate-900 p-4 rounded mt-4 overflow-x-auto border border-slate-700 text-sm md:text-base">
+                        $$P_{13}(x) = \sum_{n=0}^{6} \frac{(-1)^n}{(2n+1)!} x^{2n+1}$$
+                    </div>
+                    <p class="text-lg leading-relaxed text-slate-300 mt-4">
+                        This is how a calculator computes \(\sin(x)\). It doesn't draw triangles; it computes a carefully chosen polynomial.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step" data-index="7">
+                <div class="step-content">
+                    <h2 class="text-2xl font-semibold mb-3 text-amber-400">The Radius of Convergence</h2>
+                    <p class="text-lg leading-relaxed text-slate-300 mb-4">
+                        For \(f(x) = \sin(x)\), if we added an infinite number of terms, it would match the function perfectly for <em>every</em> real number. We say its radius of convergence is infinite.
+                    </p>
+                    <p class="text-lg leading-relaxed text-slate-300">
+                        Not all functions are so cooperative. Some series only converge near the center point. But for Sine, Cosine, and \(e^x\), this beautiful convergence holds true everywhere.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="step" data-index="8">
+                <div class="step-content">
+                    <h2 class="text-2xl font-semibold mb-3 text-emerald-400">The Perils of High Degrees</h2>
+                    <p class="text-lg leading-relaxed text-slate-300 mb-4">
+                        While Taylor series are elegant, forcing a single high-degree polynomial to fit a function over a wide range can sometimes lead to wild oscillations at the edges—a trap known as <strong>Runge's phenomenon</strong>.
+                    </p>
+                    <p class="text-lg leading-relaxed text-slate-300">
+                        These issues won't be covered here, but because of them, applied mathematics and scientific computing often rely on other fascinating kinds of approximations. Techniques using <em>Chebyshev polynomials</em>, <em>Padé approximants</em> (rational functions), or <em>splines</em> (piecewise polynomials) are frequently preferred for robust, real-world computational stability.
+                    </p>
+                </div>
+            </div>
+
+             <div class="step" data-index="9">
+                <!-- Spacer for scrolling out smoothly -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Configuration and State ---
+        const config = {
+            xDomain: [-3 * Math.PI, 3 * Math.PI],
+            yDomain: [-4, 4],
+            resolution: 400, // Number of points to draw lines
+            center: 0 // Expansion point (a)
+        };
+
+        // State corresponding to scroll steps
+        const stepStates = [
+            { degree: -1, showTarget: false, showCenter: false, math: "$$P(x) = ?$$" }, // 0: Intro
+            { degree: -1, showTarget: true, showCenter: true, math: "$$P(x) = ?$$" },  // 1: Show Sine
+            { degree: 0, showTarget: true, showCenter: true, math: "$$P_0(x) = 0$$" },  // 2: P0
+            { degree: 1, showTarget: true, showCenter: true, math: "$$P_1(x) = x$$" },  // 3: P1
+            { degree: 3, showTarget: true, showCenter: true, math: "$$P_3(x) = x - \\frac{x^3}{3!}$$" },  // 4: P3
+            { degree: 5, showTarget: true, showCenter: true, math: "$$P_5(x) = x - \\frac{x^3}{3!} + \\frac{x^5}{5!}$$" },  // 5: P5
+            { degree: 13, showTarget: true, showCenter: true, math: "$$P_{13}(x) = x - \\frac{x^3}{3!} + \\frac{x^5}{5!} - \\dots - \\frac{x^{13}}{13!}$$" }, // 6: P13
+            { degree: 33, showTarget: true, showCenter: true, math: "$$P_{\\infty}(x) = \\sum_{n=0}^{\\infty} \\frac{(-1)^n}{(2n+1)!} x^{2n+1}$$" }, // 7: Conclusion
+            { degree: 33, showTarget: true, showCenter: true, math: "$$P_{\\infty}(x) = \\sum_{n=0}^{\\infty} \\frac{(-1)^n}{(2n+1)!} x^{2n+1}$$" }, // 8: Epilogue
+            { degree: 33, showTarget: true, showCenter: true, math: "$$P_{\\infty}(x) = \\sin(x)$$" } // 9: Outro
+        ];
+
+        let currentStateIndex = 0;
+        let mathUpdateTimeout;
+        let mathJaxPromise = Promise.resolve(); // Queue for MathJax to prevent concurrent rendering errors
+
+        // --- 2. Mathematical Functions ---
+        // Factorial helper
+        function fact(n) {
+            if (n === 0 || n === 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) result *= i;
+            return result;
+        }
+
+        // Target function
+        function f(x) {
+            return Math.sin(x);
+        }
+
+        // Taylor approximation for sin(x) centered at 0
+        function taylorApprox(x, degree) {
+            if (degree < 0) return null;
+            let sum = 0;
+            // Iterate up to the specified degree
+            // For sine, we only need terms where n is odd. 
+            // We interpret 'degree' as the highest power of x included.
+            for (let k = 0; k <= degree; k++) {
+                // Sine Taylor series terms are non-zero only for odd k (1, 3, 5...)
+                // Except for degree 0 which is explicitly 0
+                if (k % 2 !== 0) {
+                    let n = (k - 1) / 2; // maps k={1,3,5} to n={0,1,2}
+                    let sign = (n % 2 === 0) ? 1 : -1;
+                    let term = (sign * Math.pow(x, k)) / fact(k);
+                    sum += term;
+                }
+            }
+            return sum;
+        }
+
+        // Data generator for drawing lines
+        function generateData(domain, resolution, func) {
+            const data = [];
+            const step = (domain[1] - domain[0]) / resolution;
+            for (let i = 0; i <= resolution; i++) {
+                const x = domain[0] + i * step;
+                const y = func(x);
+                // Simple clipping to prevent D3 from drawing lines infinitely offscreen
+                if (y !== null && y >= config.yDomain[0] * 3 && y <= config.yDomain[1] * 3) {
+                    data.push({x: x, y: y});
+                }
+            }
+            return data;
+        }
+
+        const targetData = generateData(config.xDomain, config.resolution, f);
+
+        // --- 3. D3 Setup ---
+        const container = d3.select("#vis");
+        let width = container.node().getBoundingClientRect().width;
+        let height = container.node().getBoundingClientRect().height;
+        
+        // Ensure some padding
+        const margin = {top: 20, right: 20, bottom: 40, left: 40};
+        
+        // Append SVG
+        const svg = container.append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const g = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        let innerWidth = width - margin.left - margin.right;
+        let innerHeight = height - margin.top - margin.bottom;
+
+        // Scales
+        let xScale = d3.scaleLinear()
+            .domain(config.xDomain)
+            .range([0, innerWidth]);
+
+        let yScale = d3.scaleLinear()
+            .domain(config.yDomain)
+            .range([innerHeight, 0]);
+
+        // Line generator
+        const line = d3.line()
+            .x(d => xScale(d.x))
+            .y(d => yScale(d.y))
+            .curve(d3.curveCatmullRom); // Smooth curves
+
+        // Grid lines
+        const xGrid = g.append("g").attr("class", "grid");
+        const yGrid = g.append("g").attr("class", "grid");
+        
+        function updateGrid() {
+            xGrid.selectAll("line").data(xScale.ticks(10))
+                .join("line")
+                .attr("class", "grid-line")
+                .attr("x1", d => xScale(d)).attr("x2", d => xScale(d))
+                .attr("y1", 0).attr("y2", innerHeight)
+                .style("opacity", 0.2);
+
+            yGrid.selectAll("line").data(yScale.ticks(8))
+                .join("line")
+                .attr("class", "grid-line")
+                .attr("y1", d => yScale(d)).attr("y2", d => yScale(d))
+                .attr("x1", 0).attr("x2", innerWidth)
+                .style("opacity", 0.2);
+        }
+
+        // Axes
+        const xAxis = g.append("g")
+            .attr("class", "axis")
+            .attr("transform", `translate(0,${yScale(0)})`);
+            
+        const yAxis = g.append("g")
+            .attr("class", "axis")
+            .attr("transform", `translate(${xScale(0)},0)`);
+
+        function updateAxes() {
+            // Custom tick formatting for Pi
+            const xFormat = d => {
+                if (d === 0) return "0";
+                const v = d / Math.PI;
+                if (Math.abs(v) < 0.1) return "0"; // close enough
+                if (v === 1) return "π";
+                if (v === -1) return "-π";
+                return `${v}π`;
+            };
+
+            xAxis.call(d3.axisBottom(xScale)
+                .tickValues([-2*Math.PI, -Math.PI, 0, Math.PI, 2*Math.PI])
+                .tickFormat(xFormat))
+                .selectAll("path, line").attr("class", "axis-line");
+                
+            yAxis.call(d3.axisLeft(yScale).ticks(5))
+                .selectAll("path, line").attr("class", "axis-line");
+        }
+
+        // Paths and elements
+        const targetPath = g.append("path")
+            .datum(targetData)
+            .attr("class", "line-target")
+            .attr("d", line)
+            .style("opacity", 0); // Hidden initially
+
+        const approxPath = g.append("path")
+            .attr("class", "line-approx")
+            .style("opacity", 1);
+
+        const centerPoint = g.append("circle")
+            .attr("class", "point-center")
+            .attr("r", 6)
+            .style("opacity", 0); // Hidden initially
+
+        // --- 4. Window Resize Handling ---
+        function resize() {
+            width = container.node().getBoundingClientRect().width;
+            height = container.node().getBoundingClientRect().height;
+            
+            svg.attr("width", width).attr("height", height);
+            
+            innerWidth = width - margin.left - margin.right;
+            innerHeight = height - margin.top - margin.bottom;
+
+            xScale.range([0, innerWidth]);
+            yScale.range([innerHeight, 0]);
+
+            updateGrid();
+            updateAxes();
+            
+            // Re-center axes lines
+            xAxis.attr("transform", `translate(0,${yScale(0)})`);
+            yAxis.attr("transform", `translate(${xScale(0)},0)`);
+
+            // Redraw paths
+            targetPath.attr("d", line);
+            updateVisualization(stepStates[currentStateIndex], 0);
+        }
+
+        window.addEventListener("resize", resize);
+        
+        // Initial setup calls
+        updateGrid();
+        updateAxes();
+        resize();
+
+        // --- 5. Scroll and Update Logic ---
+        function updateVisualization(state, duration = 750) {
+            // Handle Target Line
+            targetPath.transition().duration(duration)
+                .style("opacity", state.showTarget ? 1 : 0);
+
+            // Handle Center Point
+            centerPoint.transition().duration(duration)
+                .attr("cx", xScale(config.center))
+                .attr("cy", yScale(f(config.center)))
+                .style("opacity", state.showCenter ? 1 : 0);
+
+            // Handle Approximation Line
+            if (state.degree >= 0) {
+                const approxData = generateData(config.xDomain, config.resolution, (x) => taylorApprox(x, state.degree));
+                
+                const currentPath = approxPath.attr("d");
+                approxPath.datum(approxData);
+                
+                if (!currentPath) {
+                    approxPath.attr("d", line).style("opacity", 1);
+                } else {
+                    approxPath.transition().duration(duration).ease(d3.easeCubicInOut)
+                        .attr("d", line)
+                        .style("opacity", 1);
+                }
+            } else {
+                approxPath.transition().duration(duration)
+                    .style("opacity", 0);
+            }
+
+            // Update Math formula (Debounced to avoid MathJax overload)
+            updateMathJax(state.math);
+        }
+
+        function updateMathJax(latexString) {
+            clearTimeout(mathUpdateTimeout);
+            mathUpdateTimeout = setTimeout(() => {
+                const mathEl = document.getElementById('math-approx');
+                if (mathEl) {
+                    // Clear previous typeset to avoid MathJax state errors
+                    if (window.MathJax && window.MathJax.typesetClear) {
+                        MathJax.typesetClear([mathEl]);
+                    }
+                    mathEl.innerHTML = latexString;
+                    
+                    // Use a promise queue for safe sequential rendering
+                    if (window.MathJax && window.MathJax.typesetPromise) {
+                        mathJaxPromise = mathJaxPromise
+                            .then(() => MathJax.typesetPromise([mathEl]))
+                            .catch((err) => console.warn('MathJax Error:', err.message));
+                    }
+                }
+            }, 50); // slight delay
+        }
+
+        // Setup Intersection Observer for Scrollytelling
+        const steps = document.querySelectorAll(".step");
+        
+        const observerOptions = {
+            root: null,
+            rootMargin: "-40% 0px -40% 0px", // Trigger when element is near center
+            threshold: 0.5
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // Update active class for styling
+                    steps.forEach(s => s.classList.remove("is-active"));
+                    entry.target.classList.add("is-active");
+
+                    // Get index and update chart
+                    const index = parseInt(entry.target.getAttribute("data-index"));
+                    if (index !== currentStateIndex && stepStates[index]) {
+                        currentStateIndex = index;
+                        updateVisualization(stepStates[index]);
+                    }
+                }
+            });
+        }, observerOptions);
+
+        steps.forEach(step => observer.observe(step));
+        
+        // Initial render
+        updateMathJax(stepStates[0].math);
+
+    </script>
+</body>
+</html>
