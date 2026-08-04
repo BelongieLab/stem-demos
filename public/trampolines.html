@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics of Trampolines - Hooke's Law & Energy Dynamics</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- KaTeX for 3b1b-style Crisp Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        .font-mono-code {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* 3Blue1Brown Signature Glow Effects */
+        .glow-cyan {
+            box-shadow: 0 0 20px rgba(88, 196, 221, 0.25);
+        }
+        .glow-green {
+            box-shadow: 0 0 20px rgba(131, 193, 103, 0.25);
+        }
+        .glow-yellow {
+            box-shadow: 0 0 20px rgba(248, 196, 54, 0.25);
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Active step highlight */
+        .step-card {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .step-card.active {
+            border-color: #58C4DD;
+            background-color: rgba(88, 196, 221, 0.05);
+            box-shadow: 0 0 25px rgba(88, 196, 221, 0.15);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header Banner -->
+    <header class="w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-4 h-4 rounded-full bg-[#58C4DD] animate-pulse"></div>
+                <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                    Physics of Trampolines <span class="text-[#83C167] font-mono text-sm px-2 py-0.5 rounded bg-slate-800 border border-slate-700">Hooke's Law & Energy Visualizer</span>
+                </h1>
+            </div>
+            <nav class="flex items-center space-x-4 text-sm font-medium">
+                <a href="#tutorial" class="text-slate-300 hover:text-[#58C4DD] transition-colors">Scrollytelling Guide</a>
+                <a href="#sandbox" class="px-3 py-1.5 rounded-lg bg-[#58C4DD]/10 border border-[#58C4DD]/40 text-[#58C4DD] hover:bg-[#58C4DD]/20 transition-all">Free-Play Sandbox ↓</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Interactive Scrollytelling Section -->
+    <main id="tutorial" class="max-w-7xl mx-auto px-4 md:px-6 py-8 flex-grow">
+        
+        <!-- Hero Introduction Banner -->
+        <section class="mb-12 text-center max-w-3xl mx-auto">
+            <div class="inline-block px-3 py-1 mb-4 rounded-full bg-slate-800 text-[#58C4DD] text-xs font-mono uppercase tracking-wider border border-slate-700">
+                Interactive Visual Exploration
+            </div>
+            <h2 class="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-4">
+                What happens when potential energy becomes elasticity?
+            </h2>
+            <p class="text-slate-400 text-base md:text-lg leading-relaxed">
+                Scroll through the step-by-step mathematical breakdown below. Watch the vector dynamics, harmonic forces, and phase space trajectories adapt dynamically in real-time.
+            </p>
+        </section>
+
+        <!-- Two-column Layout: Left = Narrative Steps, Right = Sticky 3B1B Canvas -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Left Narrative Column (Scrollable) -->
+            <div class="lg:col-span-6 space-y-12">
+                
+                <!-- STEP 0 -->
+                <div id="step-0" class="step-card active p-6 md:p-8 rounded-2xl bg-slate-900/60 backdrop-blur">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-mono px-2.5 py-1 rounded-md bg-[#58C4DD]/20 text-[#58C4DD] font-semibold">STAGE 01</span>
+                        <span class="text-xs text-slate-500 font-mono">Freefall ($y > 0$)</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Gravitational Acceleration</h3>
+                    <p class="text-slate-300 text-sm md:text-base leading-relaxed mb-4">
+                        Before making contact with the trampoline mat, the object of mass $m$ is in pure freefall under constant gravitational acceleration $g$.
+                    </p>
+                    <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-sm font-mono space-y-2 mb-4">
+                        <div class="text-[#FC6255]">$$F_{net} = -mg$$</div>
+                        <div class="text-[#83C167]">$$v(t) = -gt = -\sqrt{2g(h - y)}$$</div>
+                        <div class="text-[#58C4DD]">$$E_{total} = E_g = mgh$$</div>
+                    </div>
+                    <p class="text-slate-400 text-xs md:text-sm">
+                        As the ball falls from height $h$, potential energy $E_g$ converts entirely into kinetic energy $E_k = \frac{1}{2}m v_{impact}^2$ right before impact.
+                    </p>
+                </div>
+
+                <!-- STEP 1 -->
+                <div id="step-1" class="step-card p-6 md:p-8 rounded-2xl bg-slate-900/60 backdrop-blur">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-mono px-2.5 py-1 rounded-md bg-[#83C167]/20 text-[#83C167] font-semibold">STAGE 02</span>
+                        <span class="text-xs text-slate-500 font-mono">Touchdown ($y \le 0$)</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Hooke's Law & Restoring Force</h3>
+                    <p class="text-slate-300 text-sm md:text-base leading-relaxed mb-4">
+                        Upon touching the trampoline surface ($y = 0$), the mat exerts a restoring force proportional to the downward displacement $y$. This is modeled by <strong>Hooke's Law</strong>:
+                    </p>
+                    <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-sm font-mono space-y-2 mb-4">
+                        <div class="text-[#58C4DD]">$$F_{spring} = -k y \quad (y \le 0)$$</div>
+                        <div class="text-[#FC6255]">$$F_{net} = -mg - ky$$</div>
+                    </div>
+                    <p class="text-slate-400 text-xs md:text-sm">
+                        Notice that gravity pulls downward while the mat pushes upward. The net force flips upward once displacement $y < -mg / k$.
+                    </p>
+                </div>
+
+                <!-- STEP 2 -->
+                <div id="step-2" class="step-card p-6 md:p-8 rounded-2xl bg-slate-900/60 backdrop-blur">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-mono px-2.5 py-1 rounded-md bg-[#F8C436]/20 text-[#F8C436] font-semibold">STAGE 03</span>
+                        <span class="text-xs text-slate-500 font-mono">Equilibrium & Peak Acceleration</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Equilibrium vs. Maximum Depression</h3>
+                    <p class="text-slate-300 text-sm md:text-base leading-relaxed mb-4">
+                        There are two critical vertical positions during contact:
+                    </p>
+                    <ul class="list-disc list-inside space-y-2 text-slate-300 text-sm mb-4">
+                        <li><strong class="text-[#83C167]">Equilibrium Position ($y_{eq}$):</strong> Where $F_{net} = 0 \implies y_{eq} = -\frac{mg}{k}$. Speed $v$ is maximum here!</li>
+                        <li><strong class="text-[#FC6255]">Maximum Compression ($y_{min}$):</strong> Where speed drops to zero ($v = 0$), storing maximum elastic potential energy $U_e$.</li>
+                    </ul>
+                    <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-xs md:text-sm font-mono space-y-2 mb-4">
+                        <div class="text-[#F8C436]">$$mgh = mgy_{min} + \frac{1}{2}k y_{min}^2$$</div>
+                        <div class="text-slate-300">$$\implies \frac{1}{2}k y_{min}^2 + mg y_{min} - mgh = 0$$</div>
+                        <div class="text-[#58C4DD]">$$y_{min} = \frac{-mg - \sqrt{(mg)^2 + 2kmgh}}{k}$$</div>
+                    </div>
+                </div>
+
+                <!-- STEP 3 -->
+                <div id="step-3" class="step-card p-6 md:p-8 rounded-2xl bg-slate-900/60 backdrop-blur">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-mono px-2.5 py-1 rounded-md bg-[#C678DD]/20 text-[#C678DD] font-semibold">STAGE 04</span>
+                        <span class="text-xs text-slate-500 font-mono">Energy Conservation</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">The Continuous Energy Exchange</h3>
+                    <p class="text-slate-300 text-sm md:text-base leading-relaxed mb-4">
+                        Without friction or air resistance, total mechanical energy $E_{total}$ is strictly conserved throughout the bounce cycle:
+                    </p>
+                    <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-sm font-mono space-y-2 mb-4">
+                        <div class="text-[#C678DD]">$$E_{total} = E_k + E_g + E_e = \text{Constant}$$</div>
+                        <div class="text-xs text-slate-400">$$\frac{1}{2}m v^2 + mgy + \frac{1}{2}k (\min(0, y))^2 = mgh$$</div>
+                    </div>
+                    <p class="text-slate-400 text-xs md:text-sm">
+                        Observe how potential energy transforms from pure gravity (yellow) into kinetic (green), and finally into elastic potential energy (cyan).
+                    </p>
+                </div>
+
+                <!-- STEP 4 -->
+                <div id="step-4" class="step-card p-6 md:p-8 rounded-2xl bg-slate-900/60 backdrop-blur">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-mono px-2.5 py-1 rounded-md bg-rose-500/20 text-rose-400 font-semibold">STAGE 05</span>
+                        <span class="text-xs text-slate-500 font-mono">Phase Space Portrait</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Phase Space & Real-World Damping</h3>
+                    <p class="text-slate-300 text-sm md:text-base leading-relaxed mb-4">
+                        In phase space—plotting velocity $v$ against position $y$—an ideal bounce forms a closed loop. Introducing damping ($-\gamma v$) turns this trajectory into a spiral converging toward the static equilibrium point $y_{eq}$.
+                    </p>
+                    <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-sm font-mono space-y-2 mb-4">
+                        <div class="text-rose-400">$$m \ddot{y} + \gamma \dot{y} + k y \cdot \mathbb{I}_{y \le 0} = -mg$$</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Sticky Interactive Visualizer -->
+            <div class="lg:col-span-6 sticky top-24">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-2xl glow-cyan">
+                    
+                    <!-- Header of Visualizer -->
+                    <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-3">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-3 h-3 rounded-full bg-[#58C4DD]"></span>
+                            <span id="canvas-status-title" class="text-sm font-bold text-white uppercase tracking-wider font-mono">Interactive Vector Diagram</span>
+                        </div>
+                        <span id="step-indicator" class="text-xs font-mono text-slate-400 bg-slate-800 px-2 py-1 rounded">Step 1 / 5</span>
+                    </div>
+
+                    <!-- Main Canvas Container -->
+                    <div class="relative w-full aspect-square md:aspect-[4/3] bg-[#0d1117] rounded-xl overflow-hidden border border-slate-800">
+                        <canvas id="scrolly-canvas" class="w-full h-full block"></canvas>
+                        
+                        <!-- HUD Overlay Overlay info -->
+                        <div class="absolute bottom-3 left-3 right-3 flex justify-between items-center text-xs font-mono bg-slate-950/80 backdrop-blur border border-slate-800 px-3 py-2 rounded-lg text-slate-300">
+                            <div>Pos <span id="hud-y" class="text-[#58C4DD]">0.00 m</span></div>
+                            <div>Vel <span id="hud-v" class="text-[#83C167]">0.00 m/s</span></div>
+                            <div>Force <span id="hud-f" class="text-[#FC6255]">0.00 N</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Scrolly Canvas Interactive Control bar -->
+                    <div class="mt-4 flex items-center justify-between gap-2">
+                        <button id="btn-replay" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition-colors flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            Replay Step
+                        </button>
+
+                        <div class="flex items-center space-x-3 text-xs text-slate-400 font-mono">
+                            <label class="flex items-center space-x-1 cursor-pointer">
+                                <input type="checkbox" id="chk-slowmo" class="rounded bg-slate-800 border-slate-700 text-[#58C4DD] focus:ring-0">
+                                <span>Slow Mo</span>
+                            </label>
+                            <label class="flex items-center space-x-1 cursor-pointer">
+                                <input type="checkbox" id="chk-vectors" checked class="rounded bg-slate-800 border-slate-700 text-[#58C4DD] focus:ring-0">
+                                <span>Vectors</span>
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Free-Play Simulation Playground Section -->
+    <section id="sandbox" class="border-t border-slate-800 bg-slate-950 py-16 px-4 md:px-6">
+        <div class="max-w-7xl mx-auto">
+            
+            <div class="text-center mb-10">
+                <span class="px-3 py-1 rounded-full bg-[#83C167]/20 text-[#83C167] text-xs font-mono uppercase tracking-wider border border-[#83C167]/30">
+                    Interactive Physics Laboratory
+                </span>
+                <h2 class="text-3xl md:text-4xl font-extrabold text-white mt-3 mb-2">
+                    1D Trampoline Free-Play Sandbox
+                </h2>
+                <p class="text-slate-400 text-sm md:text-base max-w-2xl mx-auto">
+                    Adjust the spring constant $k$, ball mass $m$, drop height $h$, and damping coefficient to observe how trampoline dynamics evolve in real time.
+                </p>
+            </div>
+
+            <!-- Sandbox Grid Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                <!-- Controls Panel -->
+                <div class="lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-6">
+                    <h3 class="text-lg font-bold text-white flex items-center justify-between border-b border-slate-800 pb-3">
+                        <span>Simulation Parameters</span>
+                        <button id="sb-reset-btn" class="text-xs font-mono px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">Reset Defaults</button>
+                    </h3>
+
+                    <!-- Spring Constant k -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs font-mono">
+                            <label for="slider-k" class="text-slate-300 font-semibold">Spring Constant ($k$)</label>
+                            <span id="val-k" class="text-[#58C4DD]">150 N/m</span>
+                        </div>
+                        <input type="range" id="slider-k" min="20" max="500" step="5" value="150" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#58C4DD]">
+                        <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                            <span>Soft (20 N/m)</span>
+                            <span>Stiff (500 N/m)</span>
+                        </div>
+                    </div>
+
+                    <!-- Mass m -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs font-mono">
+                            <label for="slider-m" class="text-slate-300 font-semibold">Ball Mass ($m$)</label>
+                            <span id="val-m" class="text-[#83C167]">2.0 kg</span>
+                        </div>
+                        <input type="range" id="slider-m" min="0.5" max="10.0" step="0.1" value="2.0" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#83C167]">
+                    </div>
+
+                    <!-- Drop Height h -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs font-mono">
+                            <label for="slider-h" class="text-slate-300 font-semibold">Drop Height ($h$)</label>
+                            <span id="val-h" class="text-[#F8C436]">3.0 m</span>
+                        </div>
+                        <input type="range" id="slider-h" min="0.5" max="6.0" step="0.1" value="3.0" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#F8C436]">
+                    </div>
+
+                    <!-- Damping Gamma -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs font-mono">
+                            <label for="slider-gamma" class="text-slate-300 font-semibold">Damping ($\gamma$)</label>
+                            <span id="val-gamma" class="text-rose-400">0.20 N·s/m</span>
+                        </div>
+                        <input type="range" id="slider-gamma" min="0.0" max="2.0" step="0.05" value="0.20" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-rose-400">
+                    </div>
+
+                    <!-- Gravity g -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs font-mono">
+                            <label for="slider-g" class="text-slate-300 font-semibold">Gravity ($g$)</label>
+                            <span id="val-g" class="text-purple-400">9.8 m/s²</span>
+                        </div>
+                        <input type="range" id="slider-g" min="1.6" max="25.0" step="0.2" value="9.8" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-400">
+                    </div>
+
+                    <!-- Simulation Controls -->
+                    <div class="pt-4 border-t border-slate-800 flex gap-3">
+                        <button id="sb-play-btn" class="flex-1 py-2.5 rounded-xl bg-[#58C4DD] text-slate-950 font-bold hover:bg-[#46b0c9] transition-colors shadow-lg shadow-[#58C4DD]/20">
+                            Pause / Play
+                        </button>
+                        <button id="sb-drop-btn" class="px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-semibold hover:bg-slate-700 transition-colors">
+                            Drop Ball
+                        </button>
+                    </div>
+
+                    <!-- Key Calculated Metrics Card -->
+                    <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs font-mono">
+                        <div class="text-slate-400">Calculated Theoretical Peak Compression:</div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Equilibrium $y_{eq}$:</span>
+                            <span id="calc-yeq" class="text-[#83C167] font-semibold">-0.13 m</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Max Compression $y_{min}$:</span>
+                            <span id="calc-ymin" class="text-[#FC6255] font-semibold">-1.04 m</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Impact Velocity $v_{impact}$:</span>
+                            <span id="calc-vimp" class="text-[#58C4DD] font-semibold">-7.67 m/s</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Simulation Visualizations & Live Charts -->
+                <div class="lg:col-span-8 space-y-6">
+                    
+                    <!-- Top Main Canvas Display -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-xl relative">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-sm font-bold font-mono text-white">Physical Real-Time Motion</h4>
+                            <div class="flex items-center space-x-4 text-xs font-mono text-slate-400">
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#58C4DD]"></span> Gravitational Potential</span>
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#83C167]"></span> Kinetic</span>
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#FC6255]"></span> Elastic Potential</span>
+                            </div>
+                        </div>
+
+                        <div class="relative w-full aspect-[16/9] bg-[#0d1117] rounded-xl overflow-hidden border border-slate-800">
+                            <canvas id="sandbox-canvas" class="w-full h-full block"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Dual Real-time Telemetry Graphs -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <!-- Energy Breakdown Graph -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                            <div class="text-xs font-mono text-slate-400 mb-2 font-semibold">Energy Channels (Joules vs Time)</div>
+                            <div class="w-full aspect-[4/3] bg-[#0d1117] rounded-xl border border-slate-800 overflow-hidden">
+                                <canvas id="energy-chart-canvas" class="w-full h-full block"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Phase Portrait Graph (Velocity vs Position) -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                            <div class="text-xs font-mono text-slate-400 mb-2 font-semibold">Phase Space Portrait ($v$ vs $y$)</div>
+                            <div class="w-full aspect-[4/3] bg-[#0d1117] rounded-xl border border-slate-800 overflow-hidden">
+                                <canvas id="phase-chart-canvas" class="w-full h-full block"></canvas>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-950 py-6 text-center text-xs text-slate-500 font-mono">
+        Physics of Trampolines • Designed with 3Blue1Brown Aesthetic Principles
+    </footer>
+
+    <script>
+        // Math & Auto-render setup
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false}
+                ],
+                throwOnError : false
+            });
+            initScrollyObserver();
+            initSandboxControls();
+            requestAnimationFrame(mainLoop);
+        });
+
+        // Color Palette (3Blue1Brown inspired)
+        const COLORS = {
+            bg: '#0d1117',
+            blue: '#58C4DD',
+            green: '#83C167',
+            yellow: '#F8C436',
+            red: '#FC6255',
+            purple: '#C678DD',
+            gray: '#475569',
+            lightGray: '#94a3b8',
+            spring: '#e2e8f0'
+        };
+
+        // --- SCROLLYTELLING STATE & LOGIC ---
+        let currentStep = 0;
+        const scrollyCanvas = document.getElementById('scrolly-canvas');
+        const scrollyCtx = scrollyCanvas.getContext('2d');
+        
+        // Dynamic Parameters for Scrollytelling
+        let scrollyState = {
+            m: 2.0,
+            k: 160.0,
+            g: 9.8,
+            h: 3.5,
+            y: 3.5,
+            v: 0.0,
+            time: 0,
+            slowMo: false,
+            showVectors: true,
+            playing: true
+        };
+
+        // --- SANDBOX STATE & LOGIC ---
+        const sbCanvas = document.getElementById('sandbox-canvas');
+        const sbCtx = sbCanvas.getContext('2d');
+        const energyCanvas = document.getElementById('energy-chart-canvas');
+        const energyCtx = energyCanvas.getContext('2d');
+        const phaseCanvas = document.getElementById('phase-chart-canvas');
+        const phaseCtx = phaseCanvas.getContext('2d');
+
+        let sbState = {
+            m: 2.0,
+            k: 150.0,
+            h: 3.0,
+            gamma: 0.20,
+            g: 9.8,
+            y: 3.0,
+            v: 0.0,
+            time: 0,
+            running: true,
+            history: [] // stores {t, y, v, Ek, Eg, Ee, Etotal}
+        };
+
+        // 4th Order Runge-Kutta numerical integration for extreme accuracy and stability
+        function physicsDerivatives(y, v, m, k, g, gamma) {
+            // Force equation:
+            // If y > 0: Free air (only gravity + drag)
+            // If y <= 0: Trampoline contact (gravity + spring force - k*y + drag)
+            let F_spring = (y <= 0) ? -k * y : 0;
+            let F_grav = -m * g;
+            let F_drag = -gamma * v;
+            let F_total = F_grav + F_spring + F_drag;
+            
+            let accel = F_total / m;
+            return { dy: v, dv: accel, F_spring, F_grav, F_total };
+        }
+
+        function stepRK4(state, dt) {
+            let { y, v, m, k, g, gamma } = state;
+
+            // k1
+            let d1 = physicsDerivatives(y, v, m, k, g, gamma);
+            
+            // k2
+            let y_k2 = y + 0.5 * dt * d1.dy;
+            let v_k2 = v + 0.5 * dt * d1.dv;
+            let d2 = physicsDerivatives(y_k2, v_k2, m, k, g, gamma);
+
+            // k3
+            let y_k3 = y + 0.5 * dt * d2.dy;
+            let v_k3 = v + 0.5 * dt * d2.dv;
+            let d3 = physicsDerivatives(y_k3, v_k3, m, k, g, gamma);
+
+            // k4
+            let y_k4 = y + dt * d3.dy;
+            let v_k4 = v + dt * d3.dv;
+            let d4 = physicsDerivatives(y_k4, v_k4, m, k, g, gamma);
+
+            // Weighted average update
+            state.y += (dt / 6.0) * (d1.dy + 2*d2.dy + 2*d3.dy + d4.dy);
+            state.v += (dt / 6.0) * (d1.dv + 2*d2.dv + 2*d3.dv + d4.dv);
+            state.time += dt;
+
+            // Compute energy metrics
+            let Ek = 0.5 * m * state.v * state.v;
+            let Eg = m * g * Math.max(-2, state.y); // shifted reference
+            let Ee = (state.y < 0) ? 0.5 * k * state.y * state.y : 0;
+            let Etotal = Ek + Eg + Ee;
+
+            return { Ek, Eg, Ee, Etotal, F_total: d1.F_total };
+        }
+
+        function initScrollyObserver() {
+            const steps = document.querySelectorAll('.step-card');
+            const stepTitles = [
+                "Stage 01: Freefall Trajectory",
+                "Stage 02: Contact & Hooke's Law",
+                "Stage 03: Equilibrium vs Compression",
+                "Stage 04: Energy Conservation",
+                "Stage 05: Phase Space Portrait"
+            ];
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        steps.forEach(s => s.classList.remove('active'));
+                        entry.target.classList.add('active');
+                        
+                        let stepId = entry.target.id;
+                        currentStep = parseInt(stepId.replace('step-', ''));
+                        
+                        document.getElementById('step-indicator').textContent = `Step ${currentStep + 1} / 5`;
+                        document.getElementById('canvas-status-title').textContent = stepTitles[currentStep];
+
+                        // Reset scrolly object state to illustrate specific step
+                        resetScrollyForStep(currentStep);
+                    }
+                });
+            }, { threshold: 0.6 });
+
+            steps.forEach(step => observer.observe(step));
+
+            // Controls
+            document.getElementById('btn-replay').addEventListener('click', () => {
+                resetScrollyForStep(currentStep);
+            });
+            document.getElementById('chk-slowmo').addEventListener('change', (e) => {
+                scrollyState.slowMo = e.target.checked;
+            });
+            document.getElementById('chk-vectors').addEventListener('change', (e) => {
+                scrollyState.showVectors = e.target.checked;
+            });
+        }
+
+        function resetScrollyForStep(step) {
+            scrollyState.y = scrollyState.h;
+            scrollyState.v = 0.0;
+            scrollyState.time = 0;
+        }
+
+        function initSandboxControls() {
+            const sliders = ['k', 'm', 'h', 'gamma', 'g'];
+            
+            sliders.forEach(id => {
+                const slider = document.getElementById(`slider-${id}`);
+                slider.addEventListener('input', (e) => {
+                    const val = parseFloat(e.target.value);
+                    sbState[id] = val;
+                    updateSandboxLabels();
+                    if (id === 'h' || id === 'm' || id === 'k' || id === 'g') {
+                        recalcSandboxTheoreticals();
+                    }
+                });
+            });
+
+            document.getElementById('sb-play-btn').addEventListener('click', () => {
+                sbState.running = !sbState.running;
+            });
+
+            document.getElementById('sb-drop-btn').addEventListener('click', () => {
+                sbState.y = sbState.h;
+                sbState.v = 0.0;
+                sbState.time = 0;
+                sbState.history = [];
+            });
+
+            document.getElementById('sb-reset-btn').addEventListener('click', () => {
+                sbState.m = 2.0;
+                sbState.k = 150.0;
+                sbState.h = 3.0;
+                sbState.gamma = 0.20;
+                sbState.g = 9.8;
+                sbState.y = 3.0;
+                sbState.v = 0.0;
+                sbState.time = 0;
+                sbState.history = [];
+
+                document.getElementById('slider-k').value = 150;
+                document.getElementById('slider-m').value = 2.0;
+                document.getElementById('slider-h').value = 3.0;
+                document.getElementById('slider-gamma').value = 0.20;
+                document.getElementById('slider-g').value = 9.8;
+
+                updateSandboxLabels();
+                recalcSandboxTheoreticals();
+            });
+
+            updateSandboxLabels();
+            recalcSandboxTheoreticals();
+        }
+
+        function updateSandboxLabels() {
+            document.getElementById('val-k').textContent = `${sbState.k} N/m`;
+            document.getElementById('val-m').textContent = `${sbState.m.toFixed(1)} kg`;
+            document.getElementById('val-h').textContent = `${sbState.h.toFixed(1)} m`;
+            document.getElementById('val-gamma').textContent = `${sbState.gamma.toFixed(2)} N·s/m`;
+            document.getElementById('val-g').textContent = `${sbState.g.toFixed(1)} m/s²`;
+        }
+
+        function recalcSandboxTheoreticals() {
+            let m = sbState.m, k = sbState.k, h = sbState.h, g = sbState.g;
+            let yeq = -(m * g) / k;
+            let disc = (m * g) * (m * g) + 2 * k * m * g * h;
+            let ymin = (-m * g - Math.sqrt(disc)) / k;
+            let vimp = -Math.sqrt(2 * g * h);
+
+            document.getElementById('calc-yeq').textContent = `${yeq.toFixed(2)} m`;
+            document.getElementById('calc-ymin').textContent = `${ymin.toFixed(2)} m`;
+            document.getElementById('calc-vimp').textContent = `${vimp.toFixed(2)} m/s`;
+        }
+
+        function resizeCanvasToDisplaySize(canvas) {
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            if (canvas.width !== width || canvas.height !== height) {
+                canvas.width = width;
+                canvas.height = height;
+                return true;
+            }
+            return false;
+        }
+
+        // Draws dynamic 3Blue1Brown spring coil
+        function drawSpring(ctx, startX, startY, endX, endY, coils, radius, color) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            
+            let dx = endX - startX;
+            let dy = endY - startY;
+            let dist = Math.hypot(dx, dy);
+            let angle = Math.atan2(dy, dx);
+
+            ctx.translate(startX, startY);
+            ctx.rotate(angle);
+
+            ctx.moveTo(0, 0);
+            let step = dist / (coils * 4);
+            
+            for (let i = 0; i < coils * 4; i++) {
+                let x = i * step;
+                let y = (i % 4 === 1) ? radius : (i % 4 === 3) ? -radius : 0;
+                ctx.lineTo(x, y);
+            }
+            ctx.lineTo(dist, 0);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Draws glowing vector arrow with label
+        function drawVector(ctx, startX, startY, vx, vy, color, label) {
+            let mag = Math.hypot(vx, vy);
+            if (mag < 2) return;
+
+            let endX = startX + vx;
+            let endY = startY + vy;
+            let angle = Math.atan2(vy, vx);
+
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 3;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 10;
+
+            // Line shaft
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+
+            // Arrowhead
+            let headLen = 10;
+            ctx.beginPath();
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX - headLen * Math.cos(angle - Math.PI / 6), endY - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(endX - headLen * Math.cos(angle + Math.PI / 6), endY - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+
+            // Label text
+            if (label) {
+                ctx.font = '12px "Fira Code", monospace';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(label, endX + 10, endY + 4);
+            }
+
+            ctx.restore();
+        }
+
+        function renderScrollyCanvas() {
+            resizeCanvasToDisplaySize(scrollyCanvas);
+            const w = scrollyCanvas.width;
+            const h = scrollyCanvas.height;
+
+            scrollyCtx.fillStyle = COLORS.bg;
+            scrollyCtx.fillRect(0, 0, w, h);
+
+            // Coordinate mapping (World to Canvas)
+            // World origin y=0 is trampoline rest position
+            const originY = h * 0.65;
+            const scaleY = h / 9.0; // 9 meters view height
+            const centerX = w * 0.35;
+
+            // Step Physics update loop
+            let dt = scrollyState.slowMo ? 0.008 : 0.016;
+            // No damping in scrolly step 0-3 for pristine ideal physics demo
+            let stepGamma = (currentStep === 4) ? 0.35 : 0.0;
+            
+            let energy = stepRK4({
+                y: scrollyState.y,
+                v: scrollyState.v,
+                m: scrollyState.m,
+                k: scrollyState.k,
+                g: scrollyState.g,
+                gamma: stepGamma,
+                time: scrollyState.time
+            }, dt);
+
+            // If ball reaches apex or max bounce bounds, loop smoothly
+            if (scrollyState.y > scrollyState.h + 0.5 && scrollyState.v > 0) {
+                scrollyState.y = scrollyState.h;
+                scrollyState.v = 0;
+            }
+
+            // Update HUD text
+            document.getElementById('hud-y').textContent = `${scrollyState.y.toFixed(2)} m`;
+            document.getElementById('hud-v').textContent = `${scrollyState.v.toFixed(2)} m/s`;
+            document.getElementById('hud-f').textContent = `${energy.F_total.toFixed(1)} N`;
+
+            let ballCanvasY = originY - scrollyState.y * scaleY;
+            let matCanvasY = (scrollyState.y <= 0) ? ballCanvasY : originY;
+
+            // 1. Draw Ground Base & Anchors
+            scrollyCtx.strokeStyle = '#334155';
+            scrollyCtx.lineWidth = 2;
+            scrollyCtx.beginPath();
+            scrollyCtx.moveTo(centerX - 90, originY + 80);
+            scrollyCtx.lineTo(centerX + 90, originY + 80);
+            scrollyCtx.stroke();
+
+            // Ground hatching
+            for (let i = -90; i <= 90; i += 15) {
+                scrollyCtx.beginPath();
+                scrollyCtx.moveTo(centerX + i, originY + 80);
+                scrollyCtx.lineTo(centerX + i - 10, originY + 95);
+                scrollyCtx.stroke();
+            }
+
+            // Trampoline Rigid Posts
+            scrollyCtx.strokeStyle = '#64748b';
+            scrollyCtx.lineWidth = 4;
+            scrollyCtx.beginPath();
+            scrollyCtx.moveTo(centerX - 80, originY);
+            scrollyCtx.lineTo(centerX - 80, originY + 80);
+            scrollyCtx.moveTo(centerX + 80, originY);
+            scrollyCtx.lineTo(centerX + 80, originY + 80);
+            scrollyCtx.stroke();
+
+            // 2. Draw Springs & Trampoline Surface Mat
+            drawSpring(scrollyCtx, centerX - 80, originY, centerX, matCanvasY, 8, 8, COLORS.spring);
+            drawSpring(scrollyCtx, centerX + 80, originY, centerX, matCanvasY, 8, 8, COLORS.spring);
+
+            // Trampoline Surface Line
+            scrollyCtx.strokeStyle = COLORS.blue;
+            scrollyCtx.lineWidth = 4;
+            scrollyCtx.beginPath();
+            scrollyCtx.moveTo(centerX - 80, originY);
+            scrollyCtx.lineTo(centerX, matCanvasY);
+            scrollyCtx.lineTo(centerX + 80, originY);
+            scrollyCtx.stroke();
+
+            // Equilibrium Reference Line (Dashed)
+            let yeq = -(scrollyState.m * scrollyState.g) / scrollyState.k;
+            let yeqCanvasY = originY - yeq * scaleY;
+            scrollyCtx.save();
+            scrollyCtx.setLineDash([4, 4]);
+            scrollyCtx.strokeStyle = 'rgba(131, 193, 103, 0.4)';
+            scrollyCtx.beginPath();
+            scrollyCtx.moveTo(centerX - 100, yeqCanvasY);
+            scrollyCtx.lineTo(centerX + 100, yeqCanvasY);
+            scrollyCtx.stroke();
+            scrollyCtx.fillStyle = COLORS.green;
+            scrollyCtx.font = '10px "Fira Code"';
+            scrollyCtx.fillText('Equilibrium (yeq)', centerX + 105, yeqCanvasY + 3);
+            scrollyCtx.restore();
+
+            // Zero Displacement Mat Line (Dashed)
+            scrollyCtx.save();
+            scrollyCtx.setLineDash([3, 3]);
+            scrollyCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            scrollyCtx.beginPath();
+            scrollyCtx.moveTo(centerX - 100, originY);
+            scrollyCtx.lineTo(centerX + 100, originY);
+            scrollyCtx.stroke();
+            scrollyCtx.restore();
+
+            // 3. Draw Falling/Bouncing Ball
+            let ballRadius = 18;
+            scrollyCtx.save();
+            scrollyCtx.fillStyle = COLORS.blue;
+            scrollyCtx.shadowColor = COLORS.blue;
+            scrollyCtx.shadowBlur = 15;
+            scrollyCtx.beginPath();
+            scrollyCtx.arc(centerX, ballCanvasY - ballRadius, ballRadius, 0, Math.PI * 2);
+            scrollyCtx.fill();
+            scrollyCtx.restore();
+
+            // 4. Draw Step Specific Vector Overlays
+            if (scrollyState.showVectors) {
+                // Gravity vector (Yellow)
+                drawVector(scrollyCtx, centerX, ballCanvasY - ballRadius, 0, scrollyState.m * scrollyState.g * 2.5, COLORS.yellow, 'Fg = mg');
+
+                // Spring force vector (Cyan)
+                if (scrollyState.y <= 0) {
+                    let Fs = scrollyState.k * Math.abs(scrollyState.y);
+                    drawVector(scrollyCtx, centerX - 12, ballCanvasY - ballRadius, 0, -Fs * 2.5, COLORS.blue, 'Fs = -ky');
+                }
+
+                // Net Velocity vector (Green)
+                drawVector(scrollyCtx, centerX + 15, ballCanvasY - ballRadius, 0, -scrollyState.v * 6.0, COLORS.green, 'v');
+            }
+
+            // 5. Right Side Energy Bar & Curves Visualization Panel
+            renderEnergyBarChart(scrollyCtx, w * 0.75, h * 0.2, 140, 180, energy);
+
+            // Phase Space trajectory in Stage 4
+            if (currentStep === 4) {
+                renderMiniPhaseSpace(scrollyCtx, w * 0.72, h * 0.65, 120, 100, scrollyState);
+            }
+        }
+
+        function renderEnergyBarChart(ctx, x, y, width, height, energy) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1;
+            ctx.fillRect(x, y, width, height);
+            ctx.strokeRect(x, y, width, height);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '11px "Fira Code"';
+            ctx.fillText('Energy Channels', x + 10, y + 18);
+
+            let maxE = scrollyState.m * scrollyState.g * scrollyState.h * 1.2;
+            let barW = 24;
+            let gap = 16;
+
+            // Normalize heights
+            let hEg = (Math.max(0, energy.Eg) / maxE) * (height - 50);
+            let hEk = (Math.max(0, energy.Ek) / maxE) * (height - 50);
+            let hEe = (Math.max(0, energy.Ee) / maxE) * (height - 50);
+
+            let baseY = y + height - 20;
+
+            // Eg Bar (Yellow)
+            ctx.fillStyle = COLORS.yellow;
+            ctx.fillRect(x + 15, baseY - hEg, barW, hEg);
+            ctx.fillText('Eg', x + 20, baseY + 14);
+
+            // Ek Bar (Green)
+            ctx.fillStyle = COLORS.green;
+            ctx.fillRect(x + 15 + barW + gap, baseY - hEk, barW, hEk);
+            ctx.fillText('Ek', x + 20 + barW + gap, baseY + 14);
+
+            // Ee Bar (Red/Cyan)
+            ctx.fillStyle = COLORS.red;
+            ctx.fillRect(x + 15 + (barW + gap) * 2, baseY - hEe, barW, hEe);
+            ctx.fillText('Ee', x + 20 + (barW + gap) * 2, baseY + 14);
+
+            ctx.restore();
+        }
+
+        function renderMiniPhaseSpace(ctx, x, y, width, height, state) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+            ctx.strokeStyle = '#334155';
+            ctx.fillRect(x, y, width, height);
+            ctx.strokeRect(x, y, width, height);
+
+            ctx.fillStyle = COLORS.purple;
+            ctx.font = '10px "Fira Code"';
+            ctx.fillText('Phase Space (v vs y)', x + 6, y + 14);
+
+            // Axes
+            let cx = x + width * 0.4;
+            let cy = y + height * 0.5;
+
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x + 5, cy);
+            ctx.lineTo(x + width - 5, cy);
+            ctx.moveTo(cx, y + 20);
+            ctx.lineTo(cx, y + height - 5);
+            ctx.stroke();
+
+            // Point on phase portrait
+            let px = cx + state.y * (width * 0.12);
+            let py = cy - state.v * (height * 0.035);
+
+            ctx.fillStyle = COLORS.purple;
+            ctx.shadowColor = COLORS.purple;
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(px, py, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function renderSandbox() {
+            resizeCanvasToDisplaySize(sbCanvas);
+            const w = sbCanvas.width;
+            const h = sbCanvas.height;
+
+            sbCtx.fillStyle = COLORS.bg;
+            sbCtx.fillRect(0, 0, w, h);
+
+            // Physics step integration if running
+            let dt = 0.016;
+            let energy = { Ek: 0, Eg: 0, Ee: 0, Etotal: 0 };
+            
+            if (sbState.running) {
+                energy = stepRK4(sbState, dt);
+
+                // Log state history for real-time telemetry charts
+                sbState.history.push({
+                    t: sbState.time,
+                    y: sbState.y,
+                    v: sbState.v,
+                    Ek: energy.Ek,
+                    Eg: energy.Eg,
+                    Ee: energy.Ee,
+                    Etotal: energy.Etotal
+                });
+
+                if (sbState.history.length > 250) {
+                    sbState.history.shift();
+                }
+            } else if (sbState.history.length > 0) {
+                let last = sbState.history[sbState.history.length - 1];
+                energy = { Ek: last.Ek, Eg: last.Eg, Ee: last.Ee, Etotal: last.Etotal };
+            }
+
+            // World to Canvas parameters
+            const originY = h * 0.65;
+            const scaleY = h / 10.0;
+            const centerX = w * 0.25;
+
+            // 1. Draw Ground Structure & Anchors
+            sbCtx.strokeStyle = '#334155';
+            sbCtx.lineWidth = 2;
+            sbCtx.beginPath();
+            sbCtx.moveTo(centerX - 100, originY + 90);
+            sbCtx.lineTo(centerX + 100, originY + 90);
+            sbCtx.stroke();
+
+            // Trampoline Leg Supports
+            sbCtx.strokeStyle = '#64748b';
+            sbCtx.lineWidth = 4;
+            sbCtx.beginPath();
+            sbCtx.moveTo(centerX - 85, originY);
+            sbCtx.lineTo(centerX - 85, originY + 90);
+            sbCtx.moveTo(centerX + 85, originY);
+            sbCtx.lineTo(centerX + 85, originY + 90);
+            sbCtx.stroke();
+
+            let ballCanvasY = originY - sbState.y * scaleY;
+            let matCanvasY = (sbState.y <= 0) ? ballCanvasY : originY;
+
+            // 2. Dynamic Springs
+            drawSpring(sbCtx, centerX - 85, originY, centerX, matCanvasY, 9, 8, COLORS.spring);
+            drawSpring(sbCtx, centerX + 85, originY, centerX, matCanvasY, 9, 8, COLORS.spring);
+
+            // Mat Bed
+            sbCtx.strokeStyle = COLORS.blue;
+            sbCtx.lineWidth = 4;
+            sbCtx.beginPath();
+            sbCtx.moveTo(centerX - 85, originY);
+            sbCtx.lineTo(centerX, matCanvasY);
+            sbCtx.lineTo(centerX + 85, originY);
+            sbCtx.stroke();
+
+            // Ball Radius based on mass
+            let radius = Math.max(14, Math.min(30, 14 + sbState.m * 2.0));
+            sbCtx.save();
+            sbCtx.fillStyle = COLORS.blue;
+            sbCtx.shadowColor = COLORS.blue;
+            sbCtx.shadowBlur = 15;
+            sbCtx.beginPath();
+            sbCtx.arc(centerX, ballCanvasY - radius, radius, 0, Math.PI * 2);
+            sbCtx.fill();
+            sbCtx.restore();
+
+            // Force vectors in sandbox
+            drawVector(sbCtx, centerX, ballCanvasY - radius, 0, sbState.m * sbState.g * 2.0, COLORS.yellow, 'Fg');
+            if (sbState.y <= 0) {
+                let Fs = sbState.k * Math.abs(sbState.y);
+                drawVector(sbCtx, centerX - 10, ballCanvasY - radius, 0, -Fs * 2.0, COLORS.red, 'Fs');
+            }
+
+            // Real-Time Potential Energy Well Graph on the Right side of Sandbox Canvas
+            renderPotentialWellGraph(sbCtx, w * 0.52, h * 0.15, w * 0.42, h * 0.72, sbState);
+        }
+
+        function renderPotentialWellGraph(ctx, x, y, width, height, state) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1;
+            ctx.fillRect(x, y, width, height);
+            ctx.strokeRect(x, y, width, height);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px "Fira Code"';
+            ctx.fillText('Potential Energy Curve U(y)', x + 12, y + 22);
+
+            let graphCx = x + width * 0.45;
+            let graphCy = y + height * 0.75;
+            let scalePos = width * 0.08;
+            let scaleU = height * 0.005;
+
+            // Axis Lines
+            ctx.strokeStyle = '#475569';
+            ctx.beginPath();
+            ctx.moveTo(x + 15, graphCy);
+            ctx.lineTo(x + width - 15, graphCy);
+            ctx.moveTo(graphCx, y + 35);
+            ctx.lineTo(graphCx, y + height - 15);
+            ctx.stroke();
+
+            // Draw U(y) parabola for y < 0 and linear for y > 0
+            ctx.strokeStyle = COLORS.blue;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+
+            let first = true;
+            for (let py = -3.0; py <= 4.0; py += 0.05) {
+                let Ug = state.m * state.g * py;
+                let Ue = (py < 0) ? 0.5 * state.k * py * py : 0;
+                let Utotal = Ug + Ue;
+
+                let canvasPx = graphCx + py * scalePos;
+                let canvasPy = graphCy - Utotal * scaleU;
+
+                if (canvasPx >= x + 10 && canvasPx <= x + width - 10 && canvasPy >= y + 30 && canvasPy <= y + height - 10) {
+                    if (first) {
+                        ctx.moveTo(canvasPx, canvasPy);
+                        first = false;
+                    } else {
+                        ctx.lineTo(canvasPx, canvasPy);
+                    }
+                }
+            }
+            ctx.stroke();
+
+            // Current State Indicator Ball on Potential Well Curve
+            let curUg = state.m * state.g * state.y;
+            let curUe = (state.y < 0) ? 0.5 * state.k * state.y * state.y : 0;
+            let curU = curUg + curUe;
+
+            let ballPx = graphCx + state.y * scalePos;
+            let ballPy = graphCy - curU * scaleU;
+
+            if (ballPx >= x + 10 && ballPx <= x + width - 10 && ballPy >= y + 30 && ballPy <= y + height - 10) {
+                ctx.fillStyle = COLORS.yellow;
+                ctx.shadowColor = COLORS.yellow;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(ballPx, ballPy, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        function renderTelemetryCharts() {
+            // 1. Energy Chart (Joules vs Time)
+            resizeCanvasToDisplaySize(energyCanvas);
+            let ew = energyCanvas.width;
+            let eh = energyCanvas.height;
+
+            energyCtx.fillStyle = COLORS.bg;
+            energyCtx.fillRect(0, 0, ew, eh);
+
+            if (sbState.history.length > 1) {
+                let maxE = Math.max(10, ...sbState.history.map(d => d.Etotal)) * 1.15;
+
+                // Draw Energy Traces
+                const drawTrace = (key, color) => {
+                    energyCtx.strokeStyle = color;
+                    energyCtx.lineWidth = 2;
+                    energyCtx.beginPath();
+                    sbState.history.forEach((pt, idx) => {
+                        let px = (idx / (sbState.history.length - 1)) * ew;
+                        let py = eh - (pt[key] / maxE) * (eh - 20) - 10;
+                        if (idx === 0) energyCtx.moveTo(px, py);
+                        else energyCtx.lineTo(px, py);
+                    });
+                    energyCtx.stroke();
+                };
+
+                drawTrace('Eg', COLORS.yellow);
+                drawTrace('Ek', COLORS.green);
+                drawTrace('Ee', COLORS.red);
+                drawTrace('Etotal', COLORS.blue);
+            }
+
+            // 2. Phase Space Chart (v vs y)
+            resizeCanvasToDisplaySize(phaseCanvas);
+            let pw = phaseCanvas.width;
+            let ph = phaseCanvas.height;
+
+            phaseCtx.fillStyle = COLORS.bg;
+            phaseCtx.fillRect(0, 0, pw, ph);
+
+            // Phase grid
+            let cx = pw * 0.45;
+            let cy = ph * 0.5;
+
+            phaseCtx.strokeStyle = '#1e293b';
+            phaseCtx.lineWidth = 1;
+            phaseCtx.beginPath();
+            phaseCtx.moveTo(0, cy);
+            phaseCtx.lineTo(pw, cy);
+            phaseCtx.moveTo(cx, 0);
+            phaseCtx.lineTo(cx, ph);
+            phaseCtx.stroke();
+
+            if (sbState.history.length > 1) {
+                phaseCtx.strokeStyle = COLORS.purple;
+                phaseCtx.lineWidth = 2;
+                phaseCtx.beginPath();
+                sbState.history.forEach((pt, idx) => {
+                    let px = cx + pt.y * (pw * 0.12);
+                    let py = cy - pt.v * (ph * 0.04);
+                    if (idx === 0) phaseCtx.moveTo(px, py);
+                    else phaseCtx.lineTo(px, py);
+                });
+                phaseCtx.stroke();
+            }
+        }
+
+        function mainLoop() {
+            renderScrollyCanvas();
+            renderSandbox();
+            renderTelemetryCharts();
+            requestAnimationFrame(mainLoop);
+        }
+    </script>
+</body>
+</html>
