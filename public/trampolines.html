@@ -211,7 +211,7 @@
                             <span class="w-3 h-3 rounded-full bg-[#58C4DD]"></span>
                             <span id="canvas-status-title" class="text-sm font-bold text-white uppercase tracking-wider font-mono">Interactive Vector Diagram</span>
                         </div>
-                        <span id="step-indicator" class="text-xs font-mono text-slate-400 bg-slate-800 px-2 py-1 rounded">Step 1 / 5</span>
+                        <span id="step-indicator" class="text-xs font-mono text-slate-400 bg-slate-800 px-2 py-1 rounded">Stage 1 / 5</span>
                     </div>
 
                     <!-- Main Canvas Container -->
@@ -228,10 +228,16 @@
 
                     <!-- Scrolly Canvas Interactive Control bar -->
                     <div class="mt-4 flex items-center justify-between gap-2">
-                        <button id="btn-replay" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition-colors flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                            Replay Step
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button id="btn-play-scrolly" class="px-3 py-1.5 rounded-lg bg-[#58C4DD] text-slate-950 font-bold hover:bg-[#46b0c9] text-xs transition-colors flex items-center gap-1.5 shadow-md shadow-[#58C4DD]/20">
+                                <svg id="play-icon-scrolly" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                <span id="play-text-scrolly">Play Animation</span>
+                            </button>
+                            <button id="btn-replay" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition-colors flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                Reset
+                            </button>
+                        </div>
 
                         <div class="flex items-center space-x-3 text-xs text-slate-400 font-mono">
                             <label class="flex items-center space-x-1 cursor-pointer">
@@ -276,6 +282,25 @@
                         <span>Simulation Parameters</span>
                         <button id="sb-reset-btn" class="text-xs font-mono px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">Reset Defaults</button>
                     </h3>
+
+                    <!-- Quick Presets -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-mono text-slate-300 font-semibold block">Quick Presets:</label>
+                        <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                            <button id="preset-trampoline" class="px-2.5 py-2 rounded-lg bg-[#58C4DD]/10 border border-[#58C4DD]/40 text-[#58C4DD] hover:bg-[#58C4DD]/20 transition-all text-left flex items-center gap-1.5">
+                                🎡 Trampoline
+                            </button>
+                            <button id="preset-floor" class="px-2.5 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition-all text-left flex items-center gap-1.5">
+                                🧱 Hard Floor
+                            </button>
+                            <button id="preset-competition" class="px-2.5 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition-all text-left flex items-center gap-1.5">
+                                🥇 Pro Bed
+                            </button>
+                            <button id="preset-foam" class="px-2.5 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition-all text-left flex items-center gap-1.5">
+                                🛋️ Soft Foam
+                            </button>
+                        </div>
+                    </div>
 
                     <!-- Spring Constant k -->
                     <div class="space-y-2">
@@ -451,7 +476,8 @@
             time: 0,
             slowMo: false,
             showVectors: true,
-            playing: true
+            playing: false,
+            history: []
         };
 
         // --- SANDBOX STATE & LOGIC ---
@@ -476,7 +502,7 @@
         };
 
         // 4th Order Runge-Kutta numerical integration for extreme accuracy and stability
-        function physicsDerivatives(y, v, m, k, g, gamma) {
+        function physicsDerivatives(y, v, m, k, g, gamma = 0) {
             // Force equation:
             // If y > 0: Free air (only gravity + drag)
             // If y <= 0: Trampoline contact (gravity + spring force - k*y + drag)
@@ -490,7 +516,7 @@
         }
 
         function stepRK4(state, dt) {
-            let { y, v, m, k, g, gamma } = state;
+            let { y, v, m, k, g, gamma = 0 } = state;
 
             // k1
             let d1 = physicsDerivatives(y, v, m, k, g, gamma);
@@ -543,7 +569,7 @@
                         let stepId = entry.target.id;
                         currentStep = parseInt(stepId.replace('step-', ''));
                         
-                        document.getElementById('step-indicator').textContent = `Step ${currentStep + 1} / 5`;
+                        document.getElementById('step-indicator').textContent = `Stage ${currentStep + 1} / 5`;
                         document.getElementById('canvas-status-title').textContent = stepTitles[currentStep];
 
                         // Reset scrolly object state to illustrate specific step
@@ -555,6 +581,11 @@
             steps.forEach(step => observer.observe(step));
 
             // Controls
+            document.getElementById('btn-play-scrolly').addEventListener('click', () => {
+                scrollyState.playing = !scrollyState.playing;
+                updateScrollyPlayBtnUI();
+            });
+
             document.getElementById('btn-replay').addEventListener('click', () => {
                 resetScrollyForStep(currentStep);
             });
@@ -566,10 +597,27 @@
             });
         }
 
+        function updateScrollyPlayBtnUI() {
+            const btnText = document.getElementById('play-text-scrolly');
+            const playIcon = document.getElementById('play-icon-scrolly');
+            if (!btnText || !playIcon) return;
+
+            if (scrollyState.playing) {
+                btnText.textContent = 'Pause';
+                playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+            } else {
+                btnText.textContent = 'Play Animation';
+                playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+            }
+        }
+
         function resetScrollyForStep(step) {
             scrollyState.y = scrollyState.h;
             scrollyState.v = 0.0;
             scrollyState.time = 0;
+            scrollyState.playing = false;
+            scrollyState.history = [];
+            updateScrollyPlayBtnUI();
         }
 
         function initSandboxControls() {
@@ -586,6 +634,33 @@
                     }
                 });
             });
+
+            // Preset Loader Helper
+            const applyPreset = (k, m, h, gamma, g = 9.8) => {
+                sbState.k = k;
+                sbState.m = m;
+                sbState.h = h;
+                sbState.gamma = gamma;
+                sbState.g = g;
+                sbState.y = h;
+                sbState.v = 0.0;
+                sbState.time = 0;
+                sbState.history = [];
+
+                document.getElementById('slider-k').value = k;
+                document.getElementById('slider-m').value = m;
+                document.getElementById('slider-h').value = h;
+                document.getElementById('slider-gamma').value = gamma;
+                document.getElementById('slider-g').value = g;
+
+                updateSandboxLabels();
+                recalcSandboxTheoreticals();
+            };
+
+            document.getElementById('preset-trampoline')?.addEventListener('click', () => applyPreset(150, 2.0, 3.0, 0.20));
+            document.getElementById('preset-floor')?.addEventListener('click', () => applyPreset(500, 1.0, 2.0, 0.85));
+            document.getElementById('preset-competition')?.addEventListener('click', () => applyPreset(350, 2.0, 4.0, 0.05));
+            document.getElementById('preset-foam')?.addEventListener('click', () => applyPreset(40, 3.0, 2.5, 1.40));
 
             document.getElementById('sb-play-btn').addEventListener('click', () => {
                 sbState.running = !sbState.running;
@@ -742,20 +817,37 @@
             // Step Physics update loop
             let dt = scrollyState.slowMo ? 0.008 : 0.016;
             // No damping in scrolly step 0-3 for pristine ideal physics demo
-            let stepGamma = (currentStep === 4) ? 0.35 : 0.0;
+            scrollyState.gamma = (currentStep === 4) ? 0.35 : 0.0;
             
-            let energy = stepRK4({
-                y: scrollyState.y,
-                v: scrollyState.v,
-                m: scrollyState.m,
-                k: scrollyState.k,
-                g: scrollyState.g,
-                gamma: stepGamma,
-                time: scrollyState.time
-            }, dt);
+            let energy;
+            if (scrollyState.playing) {
+                energy = stepRK4(scrollyState, dt);
+            } else {
+                let Ek = 0.5 * scrollyState.m * scrollyState.v * scrollyState.v;
+                let Eg = scrollyState.m * scrollyState.g * Math.max(-2, scrollyState.y);
+                let Ee = (scrollyState.y < 0) ? 0.5 * scrollyState.k * scrollyState.y * scrollyState.y : 0;
+                let F_spring = (scrollyState.y <= 0) ? -scrollyState.k * scrollyState.y : 0;
+                let F_total = -scrollyState.m * scrollyState.g + F_spring - scrollyState.gamma * scrollyState.v;
+                energy = { Ek, Eg, Ee, Etotal: Ek + Eg + Ee, F_total };
+            }
 
-            // If ball reaches apex or max bounce bounds, loop smoothly
-            if (scrollyState.y > scrollyState.h + 0.5 && scrollyState.v > 0) {
+            // Record history for phase space visualization
+            if (!scrollyState.history) scrollyState.history = [];
+            if (scrollyState.playing) {
+                scrollyState.history.push({ y: scrollyState.y, v: scrollyState.v });
+                if (scrollyState.history.length > 250) {
+                    scrollyState.history.shift();
+                }
+            }
+
+            // Step 0 specific: reset freefall upon touching mat to illustrate continuous gravitational drop
+            if (currentStep === 0 && scrollyState.y <= 0) {
+                scrollyState.y = scrollyState.h;
+                scrollyState.v = 0;
+            }
+
+            // If ball reaches apex in bounce steps, loop smoothly
+            if (scrollyState.y > scrollyState.h + 0.1 && scrollyState.v > 0) {
                 scrollyState.y = scrollyState.h;
                 scrollyState.v = 0;
             }
@@ -931,6 +1023,20 @@
             ctx.moveTo(cx, y + 20);
             ctx.lineTo(cx, y + height - 5);
             ctx.stroke();
+
+            // Draw trajectory trail
+            if (state.history && state.history.length > 1) {
+                ctx.strokeStyle = COLORS.purple;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                state.history.forEach((pt, idx) => {
+                    let px = cx + pt.y * (width * 0.12);
+                    let py = cy - pt.v * (height * 0.035);
+                    if (idx === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                });
+                ctx.stroke();
+            }
 
             // Point on phase portrait
             let px = cx + state.y * (width * 0.12);
