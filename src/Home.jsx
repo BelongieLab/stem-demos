@@ -114,6 +114,18 @@ export default function Home() {
               Discover how computers calculate functions like sine and cosine by building polynomial approximations step-by-step using Taylor Series.
             </p>
           </a>
+
+          <a 
+            href="/trampolines.html" 
+            className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-cyan-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
+          >
+            <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-cyan-400 transition-colors">
+              Physics of Trampolines
+            </h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              Explore Hooke's Law and energy conservation through a real-time, interactive 1D physics sandbox featuring live phase space trajectories.
+            </p>
+          </a>
           
           {/* Future demos will go here! */}
           
