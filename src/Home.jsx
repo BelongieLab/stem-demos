@@ -138,6 +138,18 @@ export default function Home() {
               A scrollytelling journey explaining fractions, percentages, and the "magic mirror trick" for doing complex math in your head.
             </p>
           </Link>
+
+          <Link 
+            to="/probability" 
+            className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-blue-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
+          >
+            <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-blue-400 transition-colors">
+              Probability Quest
+            </h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              Explore the Birthday Paradox and the math behind Roblox drop rates in this interactive scrollytelling adventure.
+            </p>
+          </Link>
           
           {/* Future demos will go here! */}
           
