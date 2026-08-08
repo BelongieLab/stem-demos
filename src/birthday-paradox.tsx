@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowDown, Dices, PackageOpen, Swords, Sparkles, User } from 'lucide-react';
 
-ProbabilityQuest()
+export default function ProbabilityQuest() {
   const [activeStep, setActiveStep] = useState(0);
 
   // Scrollytelling narrative tailored for August
