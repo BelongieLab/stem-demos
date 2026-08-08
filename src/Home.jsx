@@ -140,7 +140,7 @@ export default function Home() {
           </Link>
 
           <Link 
-            to="/birthday-paradox" 
+            to="/probability" 
             className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-blue-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
           >
             <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-blue-400 transition-colors">
