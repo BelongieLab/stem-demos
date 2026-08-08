@@ -126,6 +126,18 @@ export default function Home() {
               Explore Hooke's Law and energy conservation through a real-time, interactive 1D physics sandbox featuring live phase space trajectories.
             </p>
           </a>
+
+          <Link 
+            to="/percentages" 
+            className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-teal-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
+          >
+            <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-teal-400 transition-colors">
+              The Magic of Percentages
+            </h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              A scrollytelling journey explaining fractions, percentages, and the "magic mirror trick" for doing complex math in your head.
+            </p>
+          </Link>
           
           {/* Future demos will go here! */}
           
