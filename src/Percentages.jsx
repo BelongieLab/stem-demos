@@ -72,14 +72,14 @@ const Playground = () => {
   const result = (x * y) / 100;
 
   return (
-    <div className="w-full max-w-lg bg-slate-800/50 p-6 rounded-3xl border border-slate-700 shadow-2xl backdrop-blur-sm pointer-events-auto">
-      <h3 className="text-xl font-bold text-pink-400 mb-6 text-center">The Magic Mirror Trick</h3>
+    <div className="w-full max-w-lg bg-slate-800/50 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-700 shadow-2xl backdrop-blur-sm pointer-events-auto mx-2 md:mx-0">
+      <h3 className="text-lg md:text-xl font-bold text-pink-400 mb-4 md:mb-6 text-center">The Magic Mirror Trick</h3>
       
-      <div className="flex flex-col gap-8 mb-8">
-        {/* Controls */}
-        <div className="grid grid-cols-2 gap-8">
-          <div className="flex flex-col gap-2">
-            <label className="text-cyan-300 font-bold flex justify-between">
+      <div className="flex flex-col gap-4 md:gap-8 mb-4 md:mb-8">
+        {}
+        <div className="grid grid-cols-2 gap-4 md:gap-8">
+          <div className="flex flex-col gap-1 md:gap-2">
+            <label className="text-cyan-300 font-bold flex justify-between text-sm md:text-base">
               <span>Number X:</span> <span>{x}</span>
             </label>
             <input 
@@ -88,8 +88,8 @@ const Playground = () => {
               className="accent-cyan-400 h-2 bg-slate-900 rounded-lg appearance-none cursor-pointer"
             />
           </div>
-          <div className="flex flex-col gap-2">
-            <label className="text-yellow-300 font-bold flex justify-between">
+          <div className="flex flex-col gap-1 md:gap-2">
+            <label className="text-yellow-300 font-bold flex justify-between text-sm md:text-base">
               <span>Number Y:</span> <span>{y}</span>
             </label>
             <input 
@@ -100,39 +100,39 @@ const Playground = () => {
           </div>
         </div>
 
-        {/* Visual Proof */}
-        <div className="bg-slate-900 rounded-xl p-6 flex flex-col gap-6 relative overflow-hidden border border-slate-700/50">
+        {}
+        <div className="bg-slate-900 rounded-xl p-4 md:p-6 flex flex-col gap-4 md:gap-6 relative overflow-hidden border border-slate-700/50">
           {/* Grid background for scale */}
           <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '10% 100%' }}></div>
           
           {/* Top Bar: X% of Y */}
           <div className="flex flex-col gap-1 relative z-10">
-            <div className="flex justify-between text-sm font-medium">
+            <div className="flex justify-between text-xs md:text-sm font-medium">
               <span className="text-cyan-300">{x}%</span>
               <span className="text-slate-400">of a total {y}</span>
             </div>
-            <div className="h-6 w-full bg-slate-800 rounded-md overflow-hidden relative">
+            <div className="h-4 md:h-6 w-full bg-slate-800 rounded-md overflow-hidden relative">
               {/* Total Y container (scales up to 100%) */}
               <div className="absolute top-0 left-0 h-full border-r-2 border-dashed border-slate-500 transition-all duration-300" style={{ width: `${y}%` }}></div>
               {/* Filled X% of Y container */}
               <div className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300 rounded-r-md shadow-[0_0_15px_rgba(34,211,238,0.4)]" style={{ width: `${(x * y) / 100}%` }}></div>
             </div>
-            <div className="text-right text-lg font-bold text-white mt-1">= {result.toFixed(1).replace('.0', '')}</div>
+            <div className="text-right text-base md:text-lg font-bold text-white mt-1">= {result.toFixed(1).replace('.0', '')}</div>
           </div>
 
           {/* Bottom Bar: Y% of X */}
           <div className="flex flex-col gap-1 relative z-10">
-            <div className="flex justify-between text-sm font-medium">
+            <div className="flex justify-between text-xs md:text-sm font-medium">
               <span className="text-yellow-300">{y}%</span>
               <span className="text-slate-400">of a total {x}</span>
             </div>
-            <div className="h-6 w-full bg-slate-800 rounded-md overflow-hidden relative">
+            <div className="h-4 md:h-6 w-full bg-slate-800 rounded-md overflow-hidden relative">
               {/* Total X container */}
               <div className="absolute top-0 left-0 h-full border-r-2 border-dashed border-slate-500 transition-all duration-300" style={{ width: `${x}%` }}></div>
               {/* Filled Y% of X container */}
               <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 transition-all duration-300 rounded-r-md shadow-[0_0_15px_rgba(250,204,21,0.4)]" style={{ width: `${(y * x) / 100}%` }}></div>
             </div>
-            <div className="text-right text-lg font-bold text-white mt-1">= {result.toFixed(1).replace('.0', '')}</div>
+            <div className="text-right text-base md:text-lg font-bold text-white mt-1">= {result.toFixed(1).replace('.0', '')}</div>
           </div>
           
           {/* Vertical alignment line demonstrating equality */}
@@ -140,8 +140,8 @@ const Playground = () => {
         </div>
       </div>
       
-      <p className="text-center text-slate-300 text-sm">
-        See how the glowing bars always end at the exact same spot? <br/> The Pink line proves they are equal!
+      <p className="text-center text-slate-300 text-xs md:text-sm">
+        See how the glowing bars always end at the exact same spot? <br className="hidden md:block" /> The Pink line proves they are equal!
       </p>
     </div>
   );
@@ -152,24 +152,38 @@ const Playground = () => {
 export default function Percentages() {
   const [activeStep, setActiveStep] = useState(0);
   const stepRefs = useRef([]);
+  const containerRef = useRef(null);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveStep(Number(entry.target.dataset.step));
-          }
-        });
-      },
-      { rootMargin: '-40% 0px -40% 0px' } // Triggers when item hits middle 20% of screen
-    );
+  const handleScroll = () => {
+    if (!containerRef.current) return;
+    
+    // Check elements relative to the literal center of the browser viewport
+    const viewportCenter = window.innerHeight / 2;
+    let closestIndex = 0;
+    let minDistance = Infinity;
 
-    stepRefs.current.forEach((ref) => {
-      if (ref) observer.observe(ref);
+    stepRefs.current.forEach((el, index) => {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const elCenter = rect.top + rect.height / 2;
+      const distance = Math.abs(viewportCenter - elCenter);
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = index;
+      }
     });
 
-    return () => observer.disconnect();
+    setActiveStep((prev) => (prev !== closestIndex ? closestIndex : prev));
+  };
+
+  useEffect(() => {
+    // Run once on load to establish starting point
+    handleScroll();
+    
+    // Add window resize listener to recalculate correctly
+    window.addEventListener('resize', handleScroll);
+    return () => window.removeEventListener('resize', handleScroll);
   }, []);
 
   const steps = [
@@ -261,16 +275,16 @@ export default function Percentages() {
         return <GridVisual active={true} highlightCount={25} />;
       case 4:
         return (
-           <div className="flex flex-col items-center gap-8 bg-slate-800/80 p-8 rounded-3xl border-2 border-pink-500/30 shadow-[0_0_40px_rgba(236,72,153,0.15)] backdrop-blur">
-             <div className="text-3xl md:text-5xl font-bold text-slate-300 flex items-center gap-4">
+           <div className="flex flex-col items-center gap-4 md:gap-8 bg-slate-800/80 p-4 md:p-8 rounded-3xl border-2 border-pink-500/30 shadow-[0_0_40px_rgba(236,72,153,0.15)] backdrop-blur mx-4 text-center">
+             <div className="text-2xl md:text-5xl font-bold text-slate-300 flex items-center justify-center gap-2 md:gap-4 flex-wrap">
                <span className="text-cyan-400">8%</span>
-               <span className="text-xl text-slate-500">of</span>
+               <span className="text-lg md:text-xl text-slate-500">of</span>
                <span className="text-yellow-400">50</span>
              </div>
-             <div className="text-pink-500 font-black text-2xl">IS EQUAL TO</div>
-             <div className="text-3xl md:text-5xl font-bold text-slate-300 flex items-center gap-4">
+             <div className="text-pink-500 font-black text-xl md:text-2xl">IS EQUAL TO</div>
+             <div className="text-2xl md:text-5xl font-bold text-slate-300 flex items-center justify-center gap-2 md:gap-4 flex-wrap">
                <span className="text-yellow-400">50%</span>
-               <span className="text-xl text-slate-500">of</span>
+               <span className="text-lg md:text-xl text-slate-500">of</span>
                <span className="text-cyan-400">8</span>
              </div>
            </div>
@@ -283,7 +297,7 @@ export default function Percentages() {
   };
 
   return (
-    <div className="bg-slate-900 min-h-screen text-slate-100 font-sans selection:bg-pink-500/30 overflow-x-hidden">
+    <div ref={containerRef} onScroll={handleScroll} className="fixed inset-0 overflow-y-auto overflow-x-hidden bg-slate-900 text-slate-100 font-sans selection:bg-pink-500/30">
       {/* Background ambient light effects */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-cyan-900/20 blur-[100px]"></div>
@@ -293,7 +307,7 @@ export default function Percentages() {
       <div className="relative z-10 flex flex-col md:flex-row w-full max-w-7xl mx-auto">
         
         {/* Left Column: Scrolling Text */}
-        <div className="w-full md:w-5/12 px-6 md:px-12 pt-[50vh] md:pt-32 pb-64 z-20 flex flex-col gap-[70vh]">
+        <div className="w-full md:w-5/12 px-6 md:px-12 pt-[60vh] md:pt-[50vh] pb-[50vh] z-20 flex flex-col gap-[60vh] md:gap-[70vh]">
           {steps.map((step, index) => (
             <div 
               key={index} 
@@ -316,7 +330,7 @@ export default function Percentages() {
         </div>
 
         {/* Right Column: Sticky Visuals */}
-        <div className="w-full md:w-7/12 h-[45vh] md:h-screen fixed md:sticky top-0 right-0 left-0 md:left-auto flex items-center justify-center p-4 md:p-12 pointer-events-none z-10">
+        <div className="w-full md:w-7/12 h-[55vh] md:h-screen fixed md:sticky top-0 right-0 left-0 md:left-auto flex items-center justify-center p-2 md:p-12 pointer-events-none z-10">
           {/* Subtle background container for the visualizer */}
           <div className="w-full h-full max-h-[600px] relative flex items-center justify-center">
             {/* Morphing shape behind the visualizer */}
