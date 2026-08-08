@@ -12,6 +12,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/kinetic-matrix" element={<KineticMatrix />} />
         <Route path="/percentages" element={<Percentages />} />
+        <Route path="/probability" element={<ProbabilityQuest />} />
       </Routes>
     </BrowserRouter>
   );
