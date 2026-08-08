@@ -149,7 +149,7 @@ const Playground = () => {
 
 // --- MAIN APPLICATION APP ---
 
-export default function App() {
+export default function Percentages() {
   const [activeStep, setActiveStep] = useState(0);
   const stepRefs = useRef([]);
 
