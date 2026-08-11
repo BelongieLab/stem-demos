@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeno and the Endless Fetch</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f0fdfa; /* Light teal background */
+            color: #334155;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        h1, h2, h3, .comic-font {
+            font-family: 'Fredoka One', cursive;
+        }
+
+        /* Scrollytelling Setup */
+        #scroll-container {
+            position: relative;
+        }
+
+        .step {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            opacity: 0.2;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-out;
+            transform: translateY(20px);
+            z-index: 10; /* Keep text above graphics usually */
+            position: relative;
+        }
+
+        .step.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .text-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 600px;
+            border: 4px solid #14b8a6; /* Teal border */
+            position: relative;
+        }
+
+        .text-box::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 15px 15px 0;
+            border-style: solid;
+            border-color: white transparent transparent transparent;
+            z-index: 2;
+        }
+        
+        .text-box::before {
+            content: '';
+            position: absolute;
+            bottom: -21px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 18px 18px 0;
+            border-style: solid;
+            border-color: #14b8a6 transparent transparent transparent;
+            z-index: 1;
+        }
+
+        /* Graphic Container (Fixed during scrolling) */
+        #graphic-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 1;
+            pointer-events: none; /* Let clicks pass through to text if needed */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* SVG and Animation Styles */
+        .track {
+            width: 80%;
+            max-width: 800px;
+            height: 10px;
+            background: #cbd5e1;
+            border-radius: 5px;
+            position: relative;
+            margin-top: 2rem;
+        }
+
+        .marker {
+            position: absolute;
+            top: -15px;
+            width: 4px;
+            height: 40px;
+            background: #94a3b8;
+            border-radius: 2px;
+        }
+        
+        .marker-label {
+            position: absolute;
+            top: 30px;
+            transform: translateX(-50%);
+            font-weight: bold;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        #zeno-svg, #dog-svg {
+            position: absolute;
+            bottom: 20px;
+            transition: left 0.5s ease-out;
+        }
+
+        #zeno-svg {
+            width: 60px;
+            height: 100px;
+            left: 0%; /* Initial position */
+            transform: translateX(-50%);
+        }
+
+        #dog-svg {
+            width: 50px;
+            height: 50px;
+            left: 100%; /* Target position */
+            transform: translateX(-50%);
+        }
+
+        .ball {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #ef4444; /* Red ball */
+            border-radius: 50%;
+            bottom: 20px;
+            left: 100%;
+            transform: translateX(-50%);
+            box-shadow: inset -3px -3px 5px rgba(0,0,0,0.3);
+        }
+
+        /* Math highlighting */
+        .highlight {
+            color: #0ea5e9;
+            font-weight: bold;
+            font-size: 1.2em;
+            background: #e0f2fe;
+            padding: 0 5px;
+            border-radius: 4px;
+        }
+        
+        .fraction-box {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            margin: 0 4px;
+        }
+        .fraction-box span:first-child {
+            border-bottom: 2px solid currentColor;
+            padding: 0 2px;
+        }
+
+        /* Progress Bar */
+        #progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 8px;
+            background: #0ea5e9;
+            width: 0%;
+            z-index: 100;
+            transition: width 0.1s;
+        }
+        
+        /* Specific scene styling */
+        .fraction-visualization {
+            display: flex;
+            width: 80%;
+            max-width: 800px;
+            height: 40px;
+            margin-top: 1rem;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        .frac-part {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.8rem;
+            transition: width 0.5s ease;
+            box-sizing: border-box;
+            border-right: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .frac-part:last-child {
+            border-right: none;
+        }
+
+        /* Colors for fractions */
+        .bg-f1 { background-color: #3b82f6; } /* 1/2 */
+        .bg-f2 { background-color: #10b981; } /* 1/4 */
+        .bg-f3 { background-color: #f59e0b; } /* 1/8 */
+        .bg-f4 { background-color: #ef4444; } /* 1/16 */
+        .bg-f5 { background-color: #8b5cf6; } /* 1/32 */
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 8px;
+            background: #cbd5e1;
+            border-radius: 5px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #0d9488;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* SVG Definitions for characters */
+        .st0{fill:#FCD34D;} /* Skin */
+        .st1{fill:#3B82F6;} /* Shirt */
+        .st2{fill:#1E40AF;} /* Pants */
+        .st3{fill:#D97706;} /* Dog */
+        .st4{fill:#92400E;} /* Dog ears/spots */
+    </style>
+</head>
+<body>
+
+    <div id="progress-bar"></div>
+
+    <!-- Fixed Graphic Container -->
+    <div id="graphic-container">
+        
+        <!-- Track area -->
+        <div class="track" id="main-track">
+            <!-- Markers will be added by JS -->
+            
+            <!-- Zeno -->
+            <svg id="zeno-svg" viewBox="0 0 60 100">
+                <!-- Legs -->
+                <rect x="20" y="60" width="8" height="40" class="st2" />
+                <rect x="32" y="60" width="8" height="40" class="st2" />
+                <!-- Body -->
+                <rect x="15" y="30" width="30" height="35" rx="5" class="st1" />
+                <!-- Arms -->
+                <rect x="5" y="35" width="10" height="25" rx="4" class="st0" />
+                <rect x="45" y="35" width="10" height="25" rx="4" class="st0" />
+                <!-- Head -->
+                <circle cx="30" cy="15" r="15" class="st0" />
+                <!-- Eyes -->
+                <circle cx="25" cy="12" r="2" fill="#000" />
+                <circle cx="35" cy="12" r="2" fill="#000" />
+                <!-- Smile -->
+                <path d="M 22 20 Q 30 25 38 20" stroke="#000" stroke-width="2" fill="none" />
+            </svg>
+
+            <!-- Dog (Barnaby) -->
+            <svg id="dog-svg" viewBox="0 0 50 50">
+                <!-- Body -->
+                <rect x="10" y="20" width="30" height="20" rx="8" class="st3" />
+                <!-- Legs -->
+                <rect x="12" y="40" width="6" height="10" rx="3" class="st3" />
+                <rect x="32" y="40" width="6" height="10" rx="3" class="st3" />
+                <!-- Head -->
+                <circle cx="15" cy="15" r="12" class="st3" />
+                <!-- Ear -->
+                <ellipse cx="8" cy="12" rx="4" ry="8" class="st4" transform="rotate(-30 8 12)" />
+                <!-- Eye -->
+                <circle cx="12" cy="12" r="2" fill="#000" />
+                <!-- Nose -->
+                <circle cx="5" cy="15" r="2.5" fill="#000" />
+                <!-- Tail -->
+                <path d="M 40 25 Q 48 20 45 10" stroke="#D97706" stroke-width="4" stroke-linecap="round" fill="none" />
+            </svg>
+            
+            <div class="ball" id="the-ball"></div>
+        </div>
+
+        <!-- Fraction Visualization Bar -->
+        <div class="fraction-visualization" id="frac-viz">
+            <!-- Filled by JS -->
+        </div>
+
+        <!-- Large text display for current position -->
+        <div id="position-display" class="absolute top-20 text-4xl font-bold text-slate-400 opacity-0 transition-opacity comic-font">
+            Position: 0
+        </div>
+    </div>
+
+    <!-- Scroll Content -->
+    <div id="scroll-container">
+        
+        <!-- Step 1: Intro -->
+        <div class="step" data-scene="intro">
+            <div class="text-box text-center">
+                <h1 class="text-4xl text-teal-600 mb-4">The Endless Fetch</h1>
+                <p class="text-lg">Meet Zeno. He loves math.</p>
+                <p class="text-lg mt-2">Meet his dog, <strong>Barnaby</strong>. Barnaby loves fetching the red ball.</p>
+                <p class="text-gray-500 mt-6 text-sm animate-bounce">Scroll down to play ⬇️</p>
+            </div>
+        </div>
+
+        <!-- Step 2: The Throw -->
+        <div class="step" data-scene="throw">
+            <div class="text-box">
+                <p class="text-xl">Zeno throws the ball.</p>
+                <p class="text-lg mt-4">Barnaby waits patiently. Now, Zeno wants to walk over and pet Barnaby.</p>
+                <p class="text-lg mt-2">Sounds easy, right? Just walk to the dog.</p>
+            </div>
+        </div>
+
+        <!-- Step 3: The First Half -->
+        <div class="step" data-scene="half1">
+            <div class="text-box">
+                <p class="text-xl">But Zeno's brain starts thinking like an ancient Greek philosopher...</p>
+                <p class="text-lg mt-4">"Before I can reach Barnaby," Zeno thinks, "I first have to walk <span class="highlight">halfway</span> there."</p>
+            </div>
+        </div>
+
+        <!-- Step 4: The Next Half -->
+        <div class="step" data-scene="half2">
+            <div class="text-box">
+                <p class="text-xl">Okay, he made it halfway. But look!</p>
+                <p class="text-lg mt-4">There's still distance left. Before he can cross that remaining distance, he has to cross <span class="highlight">half of THAT</span>.</p>
+                <p class="text-md mt-2 text-slate-500">That's 1/2 of 1/2, which is 1/4 of the total trip.</p>
+            </div>
+        </div>
+
+        <!-- Step 5: And Again -->
+        <div class="step" data-scene="half3">
+            <div class="text-box">
+                <p class="text-xl">He steps forward again.</p>
+                <p class="text-lg mt-4">"Wait," Zeno says, stopping again. "I still have a little bit to go. I must cover <span class="highlight">half of this new remaining distance</span> first!"</p>
+                <p class="text-md mt-2 text-slate-500">Now he's adding 1/8 to his journey.</p>
+            </div>
+        </div>
+
+        <!-- Step 6: Getting silly -->
+        <div class="step" data-scene="half4">
+            <div class="text-box">
+                <p class="text-xl">Zeno takes a tiny step.</p>
+                <p class="text-lg mt-4">"And half of THAT..." (+ 1/16)</p>
+            </div>
+        </div>
+        
+        <!-- Step 7: Smaller and smaller -->
+        <div class="step" data-scene="half5">
+            <div class="text-box">
+                <p class="text-xl">A teeny-tiny step.</p>
+                <p class="text-lg mt-4">"And half of THAT..." (+ 1/32)</p>
+                <p class="text-lg mt-4 font-bold text-teal-600">Barnaby whimpers. 🐕</p>
+            </div>
+        </div>
+
+        <!-- Step 8: The Paradox -->
+        <div class="step" data-scene="paradox">
+            <div class="text-box">
+                <h2 class="text-3xl text-red-500 mb-4">The Paradox!</h2>
+                <p class="text-lg">Zeno realizes a terrible mathematical truth.</p>
+                <p class="text-lg mt-2">Because he can <em>always</em> divide the remaining distance in half, there is an <strong>infinite</strong> number of halves to cross.</p>
+                <p class="text-xl mt-4 font-bold text-center">"I can NEVER reach my dog!"</p>
+            </div>
+        </div>
+
+        <!-- Step 9: The Math -->
+        <div class="step" data-scene="math">
+            <div class="text-box text-center">
+                <h3 class="text-2xl mb-4 text-teal-700">Does it add up?</h3>
+                <p class="text-lg mb-4">Let's look at all those fractions being added together:</p>
+                
+                <div class="text-2xl font-bold text-slate-700 my-6 flex flex-wrap justify-center items-center gap-2">
+                    <div class="fraction-box"><span>1</span><span>2</span></div> +
+                    <div class="fraction-box"><span>1</span><span>4</span></div> +
+                    <div class="fraction-box"><span>1</span><span>8</span></div> +
+                    <div class="fraction-box"><span>1</span><span>16</span></div> + ...
+                </div>
+                
+                <p class="text-lg">If you have an infinite number of steps, shouldn't it take an infinite amount of time?</p>
+            </div>
+        </div>
+
+        <!-- Step 10: The Resolution -->
+        <div class="step" data-scene="resolution">
+            <div class="text-box">
+                <h3 class="text-2xl mb-4 text-teal-700">Calculus to the Rescue!</h3>
+                <p class="text-lg">Zeno lived over 2,000 years ago. It took a long time, but mathematicians eventually figured it out using <strong>Limits</strong>.</p>
+                <p class="text-lg mt-4">Even though there are an infinite number of steps, the time it takes to do each step gets infinitely smaller!</p>
+                <p class="text-lg mt-4 font-bold text-center highlight text-black bg-yellow-200">The infinite sum exactly equals 1 full trip.</p>
+            </div>
+        </div>
+        
+        <!-- Step 11: Zeno reaches Barnaby -->
+        <div class="step" data-scene="reach">
+            <div class="text-box">
+                <p class="text-xl text-center">Zeno finally takes the last (infinitely small) step.</p>
+                <p class="text-2xl mt-4 text-center">"Good boy, Barnaby!" 🎾</p>
+            </div>
+        </div>
+
+        <!-- Step 12: Interactive Panel -->
+        <div class="step" id="interactive-panel" data-scene="interactive">
+            <div class="text-box max-w-3xl w-full">
+                <h2 class="text-3xl text-teal-600 mb-6 text-center">Try it Yourself!</h2>
+                <p class="text-lg text-center mb-6">Change the number of steps Zeno takes and watch how close he gets.</p>
+
+                <div class="flex flex-col items-center gap-4">
+                    <div class="flex items-center gap-4 w-full max-w-md">
+                        <label for="step-slider" class="font-bold text-slate-700">Steps (n):</label>
+                        <input type="range" id="step-slider" min="1" max="15" value="1" class="flex-grow">
+                        <input type="number" id="step-input" min="1" max="15" value="1" class="w-16 p-2 border-2 border-teal-300 rounded text-center font-bold outline-none focus:border-teal-600">
+                    </div>
+
+                    <div class="mt-6 p-6 bg-slate-50 rounded-xl w-full border-2 border-slate-200">
+                        <p class="text-center text-slate-500 mb-4 font-bold">The Infinite Series Equation:</p>
+                        <div id="equation-display" class="text-xl sm:text-2xl font-bold text-slate-700 flex flex-wrap justify-center items-center gap-2">
+                            <!-- Filled by JS -->
+                        </div>
+                        <div class="mt-6 text-center">
+                            <p class="text-lg">Total Distance Covered:</p>
+                            <p id="total-distance-display" class="text-3xl text-teal-600 font-bold mt-2">50%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer padding so the last step can scroll fully to the center -->
+        <div style="height: 50vh;"></div>
+
+    </div>
+
+    <script>
+        // DOM Elements
+        const steps = document.querySelectorAll('.step');
+        const progressBar = document.getElementById('progress-bar');
+        const zeno = document.getElementById('zeno-svg');
+        const dog = document.getElementById('dog-svg');
+        const ball = document.getElementById('the-ball');
+        const track = document.getElementById('main-track');
+        const posDisplay = document.getElementById('position-display');
+        const fracViz = document.getElementById('frac-viz');
+
+        // Scene configurations
+        // 'pos' is percentage across the track (0 to 100)
+        const scenes = {
+            'intro': { pos: 0, showBall: true, frac: 0 },
+            'throw': { pos: 0, showBall: true, frac: 0 },
+            'half1': { pos: 50, showBall: true, frac: 1 }, // 1/2
+            'half2': { pos: 75, showBall: true, frac: 2 }, // +1/4
+            'half3': { pos: 87.5, showBall: true, frac: 3 }, // +1/8
+            'half4': { pos: 93.75, showBall: true, frac: 4 }, // +1/16
+            'half5': { pos: 96.875, showBall: true, frac: 5 }, // +1/32
+            'paradox': { pos: 96.875, showBall: true, frac: 5 },
+            'math': { pos: 96.875, showBall: true, frac: 5, highlightFrac: true },
+            'resolution': { pos: 96.875, showBall: true, frac: 5 },
+            'reach': { pos: 100, showBall: false, frac: 0 },
+            'interactive': { custom: true }
+        };
+
+        // Draw markers on track
+        const fractions = [0, 50, 75, 87.5, 93.75];
+        const labels = ["0", "1/2", "3/4", "7/8", "15/16"];
+        
+        fractions.forEach((frac, index) => {
+            const marker = document.createElement('div');
+            marker.className = 'marker';
+            marker.style.left = `${frac}%`;
+            
+            if(index > 0 && index < 4) { // Don't label 0 or too dense ones
+                const label = document.createElement('div');
+                label.className = 'marker-label';
+                label.style.left = `${frac}%`;
+                label.innerText = labels[index];
+                track.appendChild(label);
+            }
+            
+            track.appendChild(marker);
+        });
+        
+        // Add final marker at 100%
+        const endMarker = document.createElement('div');
+        endMarker.className = 'marker';
+        endMarker.style.left = '100%';
+        endMarker.style.backgroundColor = '#ef4444'; // Red end marker
+        track.appendChild(endMarker);
+        
+        const endLabel = document.createElement('div');
+        endLabel.className = 'marker-label';
+        endLabel.style.left = '100%';
+        endLabel.innerText = "1";
+        endLabel.style.color = '#ef4444';
+        track.appendChild(endLabel);
+
+        const fracColors = ['bg-f1', 'bg-f2', 'bg-f3', 'bg-f4', 'bg-f5'];
+        
+        const stepSlider = document.getElementById('step-slider');
+        const stepInput = document.getElementById('step-input');
+        const eqDisplay = document.getElementById('equation-display');
+        const distDisplay = document.getElementById('total-distance-display');
+
+        // Render fraction bar dynamically
+        function renderFractionBar(n, forceFull = false) {
+            fracViz.innerHTML = '';
+            for(let i = 1; i <= n; i++) {
+                const part = document.createElement('div');
+                const widthPct = (1 / Math.pow(2, i)) * 100;
+                part.className = `frac-part ${fracColors[(i-1) % 5]}`;
+                part.style.width = `${widthPct}%`;
+                
+                // Only show text if wide enough, unless we force showing all for math
+                if (widthPct > 5 || forceFull) {
+                    part.innerText = `1/${Math.pow(2, i)}`;
+                    part.style.color = 'white';
+                } else {
+                    part.style.color = 'transparent';
+                }
+                
+                // Ensure math section shows layout properly
+                if(forceFull && widthPct < 5) {
+                    part.style.fontSize = '0.5rem';
+                }
+                
+                fracViz.appendChild(part);
+            }
+        }
+
+        // Handle the dynamic interactive panel logic
+        function updateInteractiveState(n) {
+            stepSlider.value = n;
+            stepInput.value = n;
+
+            let total = 0;
+            let eqHTML = '';
+            
+            for(let i = 1; i <= n; i++) {
+                let denom = Math.pow(2, i);
+                let val = 1 / denom;
+                total += val;
+                
+                if(i <= 3) { // Show first three fractions explicitly
+                    eqHTML += `<div class="fraction-box"><span>1</span><span>${denom}</span></div>`;
+                    if (i < n) eqHTML += ' + ';
+                } else if (i === 4 && n > 4) { // Add ellipsis if there are more
+                    eqHTML += ' ... + ';
+                } else if (i === n && n > 3) { // Show the last fraction term
+                    eqHTML += `<div class="fraction-box"><span>1</span><span>${denom}</span></div>`;
+                }
+            }
+            
+            // Limit precision for display purposes
+            eqHTML += ` = <span class="text-teal-600 ml-2">${total.toFixed(5)}</span>`;
+            eqDisplay.innerHTML = eqHTML;
+            distDisplay.innerText = `${(total * 100).toFixed(3)}%`;
+
+            if (currentScene === 'interactive') {
+                zeno.style.left = `${total * 100}%`;
+                posDisplay.style.opacity = '1';
+                posDisplay.innerText = `${(total * 100).toFixed(2)}% there`;
+                
+                fracViz.style.opacity = '1';
+                renderFractionBar(n);
+                
+                ball.style.opacity = '1';
+                ball.style.left = '100%';
+                dog.style.transform = 'translate(-50%, 0)';
+                document.getElementById('graphic-container').style.opacity = '1';
+            }
+        }
+
+        stepSlider.addEventListener('input', (e) => updateInteractiveState(parseInt(e.target.value)));
+        stepInput.addEventListener('input', (e) => {
+            let val = parseInt(e.target.value);
+            if(isNaN(val)) return;
+            if(val > 15) val = 15;
+            if(val < 1) val = 1;
+            updateInteractiveState(val);
+        });
+
+        // Setup Intersection Observer for scroll triggers
+        let currentScene = 'intro';
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '-40% 0px -40% 0px', // Trigger when roughly in center
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // Remove active from all
+                    steps.forEach(s => s.classList.remove('active'));
+                    // Add active to current
+                    entry.target.classList.add('active');
+                    
+                    const sceneId = entry.target.getAttribute('data-scene');
+                    if (sceneId !== currentScene) {
+                        currentScene = sceneId;
+                        updateGraphics(sceneId);
+                    }
+                }
+            });
+        }, observerOptions);
+
+        steps.forEach(step => observer.observe(step));
+
+        // Update progress bar based on scroll
+        window.addEventListener('scroll', () => {
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const progress = (scrollTop / scrollHeight) * 100;
+            progressBar.style.width = `${progress}%`;
+        });
+
+        function updateGraphics(sceneId) {
+            const config = scenes[sceneId];
+            if (!config) return;
+
+            // Hand over control to the interactive engine if in custom mode
+            if (config.custom && sceneId === 'interactive') {
+                updateInteractiveState(parseInt(stepSlider.value));
+                return;
+            }
+
+            document.getElementById('graphic-container').style.opacity = '1';
+
+            // Move Zeno
+            zeno.style.left = `${config.pos}%`;
+            
+            // Handle Ball
+            if (config.showBall) {
+                ball.style.opacity = '1';
+                ball.style.left = '100%';
+            } else {
+                ball.style.opacity = '0';
+            }
+
+            // Dog reaction (jump when reached)
+            if (sceneId === 'reach') {
+                dog.style.transform = 'translate(-50%, -20px)';
+                setTimeout(() => { dog.style.transform = 'translate(-50%, 0)'; }, 300);
+                setTimeout(() => { dog.style.transform = 'translate(-50%, -20px)'; }, 600);
+                setTimeout(() => { dog.style.transform = 'translate(-50%, 0)'; }, 900);
+            } else {
+                dog.style.transform = 'translate(-50%, 0)';
+            }
+            
+            // Fraction Bar Logic
+            if (config.frac > 0 && sceneId !== 'math' && sceneId !== 'resolution') {
+                fracViz.style.opacity = '1';
+                renderFractionBar(config.frac);
+            } else if (sceneId === 'math') {
+                fracViz.style.opacity = '1';
+                renderFractionBar(5, true); // Force show details for math block
+            } else {
+                fracViz.style.opacity = '0';
+            }
+
+            // Position Display
+            if (config.pos > 0 && config.pos < 100) {
+                posDisplay.style.opacity = '1';
+                posDisplay.innerText = `${config.pos}% there`;
+            } else {
+                posDisplay.style.opacity = '0';
+            }
+        }
+
+        // Initialize first scene manually just in case
+        updateGraphics('intro');
+        // Initialize interactive state invisibly to pre-populate DOM
+        updateInteractiveState(1);
+    </script>
+</body>
+</html>
