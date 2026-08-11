@@ -150,6 +150,18 @@ export default function Home() {
               Explore the Birthday Paradox and the math behind Roblox drop rates in this interactive scrollytelling adventure.
             </p>
           </Link>
+
+          <a 
+            href="/zenos-paradox.html" 
+            className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-teal-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
+          >
+            <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-teal-400 transition-colors">
+              Zeno and the Endless Fetch
+            </h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              Explore Zeno's Paradox and the concept of infinite limits through a fun, interactive scrollytelling journey about a mathematician trying to pet his dog.
+            </p>
+          </a>
           
           {/* Future demos will go here! */}
           
