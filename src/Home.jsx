@@ -162,6 +162,18 @@ export default function Home() {
               Explore Zeno's Paradox and the concept of infinite limits through a fun, interactive scrollytelling journey about a mathematician trying to pet his dog.
             </p>
           </a>
+
+          <a 
+            href="/acids-and-bases.html" 
+            className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-rose-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
+          >
+            <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-rose-400 transition-colors">
+              The Power of Hydrogen
+            </h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              Dive into the molecular world of acids and bases. Explore the logarithmic pH scale through a scrollytelling 3D particle simulation.
+            </p>
+          </a>
           
           {/* Future demos will go here! */}
           
