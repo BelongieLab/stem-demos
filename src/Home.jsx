@@ -174,7 +174,18 @@ export default function Home() {
               Dive into the molecular world of acids and bases. Explore the logarithmic pH scale through a scrollytelling 3D particle simulation.
             </p>
           </a>
-          
+
+          <a 
+            href="/maxwell-demon.html" 
+            className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-violet-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
+          >
+            <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-violet-400 transition-colors">
+              Maxwell's Demon
+            </h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              Explore the thought experiment that challenged the Second Law of Thermodynamics through a live, interactive particle sorting simulation.
+            </p>
+          </a>
           {/* Future demos will go here! */}
           
         </div>
