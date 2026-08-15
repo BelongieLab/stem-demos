@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maxwell's Demon: A Thermodynamic Paradox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        hot: '#ef4444', // red-500
+                        cold: '#3b82f6', // blue-500
+                        demon: '#8b5cf6', // violet-500
+                        background: '#0f172a', // slate-900
+                        surface: '#1e293b', // slate-800
+                        textMain: '#f8fafc', // slate-50
+                        textMuted: '#94a3b8', // slate-400
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* Scrollytelling layout */
+        #scrolly {
+            position: relative;
+            display: flex;
+        }
+
+        article {
+            position: relative;
+            padding: 0 1rem;
+            width: 100%;
+            max-width: 40rem;
+            margin: 0 auto;
+            z-index: 10;
+        }
+
+        .step {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.2;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-out;
+            transform: translateY(20px);
+            margin-bottom: 20vh;
+        }
+
+        .step.is-active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .step-content {
+            background-color: rgba(30, 41, 59, 0.95);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Sticky graphic container */
+        figure {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            width: 100%;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 0;
+            pointer-events: none; /* Let clicks pass through to interactive bits later if needed */
+        }
+
+        .graphic-container {
+            width: 100%;
+            height: 100%;
+            max-width: 800px;
+            max-height: 800px;
+            position: relative;
+        }
+
+        /* Typography */
+        h1, h2 {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        /* Highlight spans */
+        .hl-hot { color: #ef4444; font-weight: 600; }
+        .hl-cold { color: #3b82f6; font-weight: 600; }
+        .hl-demon { color: #8b5cf6; font-weight: 600; }
+
+        /* Full screen interactive section */
+        #interactive-section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            z-index: 20;
+            background-color: #0f172a; /* Solid background to obscure previous graphics */
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #simulation-container {
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 16/9;
+            background-color: #1e293b;
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* D3 Canvas styles */
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .door {
+            transition: height 0.1s;
+        }
+
+        /* Fade overlay for transitions */
+        #graphic-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #0f172a;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body class="antialiased font-sans">
+
+    <header class="min-h-[80vh] flex flex-col items-center justify-center text-center px-4 relative z-20">
+        <div class="max-w-3xl">
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-red-400 leading-tight py-2">
+                Maxwell's Demon
+            </h1>
+            <p class="text-xl md:text-2xl text-textMuted mb-10 font-light">
+                A thought experiment that challenged the undisputed law of the universe.
+            </p>
+            <div class="animate-bounce text-textMuted">
+                <i data-lucide="chevron-down" class="w-8 h-8 mx-auto"></i>
+                <span class="text-sm tracking-widest uppercase mt-2 block">Scroll</span>
+            </div>
+        </div>
+    </header>
+
+    <main id="scrolly">
+        <!-- Sticky Graphic Background -->
+        <figure class="fixed inset-0 pointer-events-none">
+            <div class="graphic-container w-full h-full relative" id="d3-graphic-container">
+                <!-- D3 will render SVGs or Canvas here for the scroll phases -->
+                <svg id="scroll-svg" width="100%" height="100%" class="absolute inset-0"></svg>
+                <div id="graphic-overlay"></div>
+            </div>
+        </figure>
+
+        <!-- Scroll Text Content -->
+        <article>
+            <div class="step" data-step="1">
+                <div class="step-content">
+                    <h2 class="text-3xl font-bold mb-4">The Second Law</h2>
+                    <p class="text-lg leading-relaxed mb-4">
+                        The Second Law of Thermodynamics is one of the most fundamental rules of physics. It states that the total <strong>entropy</strong> (a measure of disorder or randomness) of an isolated system can never decrease over time.
+                    </p>
+                    <p class="text-lg leading-relaxed text-textMuted">
+                        If you drop an egg, it breaks. It never spontaneously reassembles. Heat flows from hot to cold, never the reverse. Things naturally tend towards chaos.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step" data-step="2">
+                <div class="step-content">
+                    <h2 class="text-3xl font-bold mb-4">A Box of Gas</h2>
+                    <p class="text-lg leading-relaxed mb-4">
+                        Imagine a sealed box divided into two halves by a wall. The box is filled with a gas. 
+                    </p>
+                    <p class="text-lg leading-relaxed text-textMuted">
+                        At the microscopic level, this gas consists of countless particles bouncing around randomly. In a gas at equilibrium, particles are moving at various speeds—some <span class="hl-hot">fast (hot)</span> and some <span class="hl-cold">slow (cold)</span>—evenly distributed throughout both halves.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step" data-step="3">
+                <div class="step-content">
+                    <h2 class="text-3xl font-bold mb-4">The Challenger Appears</h2>
+                    <p class="text-lg leading-relaxed mb-4">
+                        In 1867, physicist James Clerk Maxwell proposed a thought experiment to 'pick a hole' in the Second Law.
+                    </p>
+                    <p class="text-lg leading-relaxed text-textMuted">
+                        He imagined a tiny, intelligent being—later dubbed <span class="hl-demon">"Maxwell's Demon"</span>—guarding a microscopic, frictionless trapdoor in the wall between the two halves of the box.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step" data-step="4">
+                <div class="step-content">
+                    <h2 class="text-3xl font-bold mb-4">Sorting Chaos</h2>
+                    <p class="text-lg leading-relaxed mb-4">
+                        The Demon observes the speed of every particle approaching the door. 
+                    </p>
+                    <p class="text-lg leading-relaxed text-textMuted">
+                        When a <span class="hl-hot">fast-moving (hot) particle</span> approaches from the left, the Demon opens the door to let it into the right chamber. When a <span class="hl-cold">slow-moving (cold) particle</span> approaches from the right, it lets it into the left chamber.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step" data-step="5">
+                <div class="step-content">
+                    <h2 class="text-3xl font-bold mb-4">Breaking the Law</h2>
+                    <p class="text-lg leading-relaxed mb-4">
+                        Over time, the right side accumulates fast particles (getting <span class="hl-hot">hotter</span>), and the left side accumulates slow particles (getting <span class="hl-cold">colder</span>).
+                    </p>
+                    <p class="text-lg leading-relaxed text-textMuted">
+                        The Demon has created a temperature difference out of randomness without doing any physical work (the door is frictionless). This decreases total entropy, seemingly violating the Second Law!
+                    </p>
+                </div>
+            </div>
+            
+            <div class="step" data-step="6">
+                <div class="step-content border-demon border-opacity-50">
+                    <h2 class="text-3xl font-bold mb-4 text-demon">The Resolution</h2>
+                    <p class="text-lg leading-relaxed mb-4">
+                        For decades, this paradox troubled physicists. The resolution came through information theory.
+                    </p>
+                    <p class="text-lg leading-relaxed text-textMuted">
+                        To sort particles, the Demon must measure their speed and store that information. Eventually, its memory gets full. To continue, it must erase memory. Physicist Rolf Landauer proved that <strong>erasing information inherently produces heat</strong> and increases entropy, saving the Second Law.
+                    </p>
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <section id="interactive-section">
+        <div class="max-w-4xl w-full mx-auto text-center mb-8">
+            <h2 class="text-4xl font-bold mb-4 font-serif">Try it Yourself</h2>
+            <p class="text-lg text-textMuted max-w-2xl mx-auto">
+                Take on the role of Maxwell's Demon. Click or touch the center barrier to open the trapdoor. 
+                Try to let <span class="hl-hot">Fast (Red)</span> particles to the right and keep <span class="hl-cold">Slow (Blue)</span> particles on the left.
+            </p>
+        </div>
+
+        <div id="simulation-container" class="cursor-pointer">
+            <canvas id="sim-canvas"></canvas>
+            
+            <!-- UI Overlay for Simulation -->
+            <div class="absolute top-4 left-4 right-4 flex justify-between pointer-events-none text-white font-mono text-sm sm:text-base">
+                <div class="bg-surface/80 px-3 py-2 rounded-lg border border-white/10 backdrop-blur-sm">
+                    Left Temp: <span id="temp-left" class="font-bold text-cold">0</span>
+                </div>
+                
+                <div class="bg-demon/20 text-demon px-3 py-2 rounded-lg border border-demon/30 backdrop-blur-sm hidden sm:block animate-pulse">
+                    Press & Hold Area to Open Door
+                </div>
+
+                <div class="bg-surface/80 px-3 py-2 rounded-lg border border-white/10 backdrop-blur-sm">
+                    Right Temp: <span id="temp-right" class="font-bold text-hot">0</span>
+                </div>
+            </div>
+            
+            <!-- Door visualizer -->
+            <div id="door-indicator" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-32 border-2 border-dashed border-demon/50 rounded-lg pointer-events-none opacity-50 flex items-center justify-center flex-col gap-1 transition-opacity">
+                <div class="w-1 h-1 bg-demon rounded-full"></div>
+                <div class="w-1 h-1 bg-demon rounded-full"></div>
+                <div class="w-1 h-1 bg-demon rounded-full"></div>
+            </div>
+        </div>
+        
+        <div class="mt-8 flex gap-4">
+            <button id="btn-reset" class="px-6 py-2 bg-surface hover:bg-slate-700 text-white rounded-full font-medium transition-colors border border-white/10">Reset Simulation</button>
+            <button id="btn-auto" class="px-6 py-2 bg-demon hover:bg-violet-600 text-white rounded-full font-medium transition-colors shadow-[0_0_15px_rgba(139,92,246,0.5)]">Auto-Demon (AI)</button>
+        </div>
+    </section>
+
+    <footer class="py-10 text-center text-textMuted border-t border-white/10 mt-12 bg-background relative z-20">
+        <p>Interactive Scrollytelling Example • Maxwell's Demon</p>
+    </footer>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        /* --- Scroll Setup --- */
+        const steps = document.querySelectorAll('.step');
+        let currentStep = -1;
+
+        // Intersection Observer for Scroll events
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.5 // Trigger when 50% of the step is visible
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const stepIndex = parseInt(entry.target.getAttribute('data-step')) - 1;
+                    if (currentStep !== stepIndex) {
+                        // Remove active class from old step
+                        if (currentStep >= 0 && steps[currentStep]) {
+                            steps[currentStep].classList.remove('is-active');
+                        }
+                        
+                        currentStep = stepIndex;
+                        entry.target.classList.add('is-active');
+                        
+                        // Trigger graphic update
+                        updateGraphic(currentStep);
+                    }
+                }
+            });
+        }, observerOptions);
+
+        steps.forEach(step => observer.observe(step));
+
+        /* --- Graphic Rendering (D3 Setup for Background) --- */
+        const svg = d3.select("#scroll-svg");
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        
+        // Ensure SVG updates on resize
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            svg.selectAll(".bg-particle").remove(); // Re-init
+            if(currentStep >= 1) initParticles();
+        });
+
+        // Background visual state
+        let animParticles = [];
+        let animTimer = null;
+        const numAnimParticles = 100;
+        const boxWidth = 400;
+        const boxHeight = 300;
+        
+        const gCenter = svg.append("g")
+            .attr("transform", `translate(${width/2 - boxWidth/2}, ${height/2 - boxHeight/2})`)
+            .attr("opacity", 0);
+
+        // Box outline
+        const boxOutline = gCenter.append("rect")
+            .attr("width", boxWidth)
+            .attr("height", boxHeight)
+            .attr("fill", "none")
+            .attr("stroke", "#334155") // slate-700
+            .attr("stroke-width", 4)
+            .attr("rx", 10);
+
+        // Center wall
+        const centerWall = gCenter.append("line")
+            .attr("x1", boxWidth/2)
+            .attr("y1", 0)
+            .attr("x2", boxWidth/2)
+            .attr("y2", boxHeight)
+            .attr("stroke", "#475569") // slate-600
+            .attr("stroke-width", 6)
+            .attr("opacity", 0);
+            
+        // Demon Eye visual
+        const demonEye = gCenter.append("g")
+            .attr("transform", `translate(${boxWidth/2}, -30)`)
+            .attr("opacity", 0);
+            
+        demonEye.append("circle")
+            .attr("r", 15)
+            .attr("fill", "#1e293b")
+            .attr("stroke", "#8b5cf6")
+            .attr("stroke-width", 2);
+        const pupil = demonEye.append("circle")
+            .attr("r", 5)
+            .attr("fill", "#8b5cf6");
+
+        function initParticles() {
+            animParticles = [];
+            gCenter.selectAll(".bg-particle").remove();
+            
+            for (let i = 0; i < numAnimParticles; i++) {
+                // Determine speed (temperature)
+                const isHot = Math.random() > 0.5;
+                const speed = isHot ? 3 + Math.random()*2 : 0.5 + Math.random();
+                const angle = Math.random() * Math.PI * 2;
+                
+                let p = {
+                    id: i,
+                    x: Math.random() * (boxWidth - 10) + 5,
+                    y: Math.random() * (boxHeight - 10) + 5,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    isHot: isHot,
+                    color: isHot ? '#ef4444' : '#3b82f6', // red/blue
+                    r: isHot ? 3 : 4 // hot are slightly smaller/faster looking
+                };
+                animParticles.push(p);
+            }
+
+            gCenter.selectAll(".bg-particle")
+                .data(animParticles)
+                .enter()
+                .append("circle")
+                .attr("class", "bg-particle")
+                .attr("r", d => d.r)
+                .attr("fill", d => d.color)
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y)
+                .attr("opacity", 0.8);
+        }
+
+        function tickBackgroundAnim() {
+            // Update positions
+            animParticles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Outer walls
+                if (p.x < p.r) { p.x = p.r; p.vx *= -1; }
+                if (p.x > boxWidth - p.r) { p.x = boxWidth - p.r; p.vx *= -1; }
+                if (p.y < p.r) { p.y = p.r; p.vy *= -1; }
+                if (p.y > boxHeight - p.r) { p.y = boxHeight - p.r; p.vy *= -1; }
+
+                // Center wall logic (based on step)
+                if (currentStep >= 1) { // Wall exists
+                    const doorOpen = currentStep >= 3;
+                    const wallX = boxWidth / 2;
+                    
+                    if (!doorOpen) {
+                        // Solid wall
+                        if (p.x < wallX && p.x + p.vx > wallX - p.r) { p.x = wallX - p.r; p.vx *= -1; }
+                        else if (p.x > wallX && p.x + p.vx < wallX + p.r) { p.x = wallX + p.r; p.vx *= -1; }
+                    } else if (currentStep === 3) {
+                        // Demon sorting (fake sorting for visual effect)
+                        // Allow hot to pass right, cold to pass left through center
+                        const doorTop = boxHeight/2 - 30;
+                        const doorBottom = boxHeight/2 + 30;
+                        
+                        const hitWall = (p.y < doorTop || p.y > doorBottom);
+                        
+                        if (hitWall) {
+                             if (p.x < wallX && p.x + p.vx > wallX - p.r) { p.x = wallX - p.r; p.vx *= -1; }
+                             else if (p.x > wallX && p.x + p.vx < wallX + p.r) { p.x = wallX + p.r; p.vx *= -1; }
+                        } else {
+                            // Passing through door
+                            // Animate eye looking at particle passing
+                            if (Math.abs(p.x - wallX) < 10) {
+                                pupil.transition().duration(50).attr("cx", (p.x - wallX) * 0.5).attr("cy", (p.y - boxHeight/2) * 0.1);
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Specific state overrides for visual effect
+            if (currentStep === 4) {
+                // Force sorted state quickly
+                animParticles.forEach(p => {
+                    const wallX = boxWidth / 2;
+                    if (p.isHot && p.x < wallX) { p.x = wallX + Math.random()*(boxWidth/2-10); p.vx = Math.abs(p.vx); }
+                    if (!p.isHot && p.x > wallX) { p.x = Math.random()*(boxWidth/2-10); p.vx = -Math.abs(p.vx); }
+                });
+            } else if (currentStep === 5) {
+               // Demon gets hot (red) and vibrates
+               demonEye.select("circle:first-child").transition().duration(1000).attr("fill", "#450a0a").attr("stroke", "#ef4444");
+            } else {
+                demonEye.select("circle:first-child").transition().duration(500).attr("fill", "#1e293b").attr("stroke", "#8b5cf6");
+                pupil.transition().duration(500).attr("cx", 0).attr("cy", 0);
+            }
+
+            gCenter.selectAll(".bg-particle")
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+
+            animTimer = requestAnimationFrame(tickBackgroundAnim);
+        }
+
+        function updateGraphic(step) {
+            
+            // Re-center graphic on resize
+            gCenter.transition().duration(500).attr("transform", `translate(${window.innerWidth/2 - boxWidth/2}, ${window.innerHeight/2 - boxHeight/2})`);
+
+            switch(step) {
+                case 0: // The Second Law
+                    gCenter.transition().duration(1000).attr("opacity", 0);
+                    if(animTimer) cancelAnimationFrame(animTimer);
+                    break;
+                
+                case 1: // A Box of Gas
+                    if(!animTimer || animParticles.length === 0) {
+                        initParticles();
+                        tickBackgroundAnim();
+                    }
+                    gCenter.transition().duration(1000).attr("opacity", 1);
+                    centerWall.transition().duration(1000).attr("opacity", 1);
+                    // Solid wall
+                    centerWall.attr("y1", 0).attr("y2", boxHeight);
+                    demonEye.transition().duration(500).attr("opacity", 0);
+                    
+                    // Reset sorting if coming backward
+                    animParticles.forEach(p => p.color = p.isHot ? '#ef4444' : '#3b82f6');
+                    gCenter.selectAll(".bg-particle").attr("fill", d => d.color);
+                    break;
+                
+                case 2: // Challenger Appears
+                    gCenter.transition().duration(1000).attr("opacity", 1);
+                    centerWall.transition().duration(500).attr("opacity", 1);
+                    centerWall.attr("y1", 0).attr("y2", boxHeight);
+                    
+                    demonEye.transition().delay(300).duration(1000)
+                        .attr("opacity", 1)
+                        .attr("transform", `translate(${boxWidth/2}, -30)`);
+                    
+                    // Reset colors just in case
+                    animParticles.forEach(p => p.color = p.isHot ? '#ef4444' : '#3b82f6');
+                    gCenter.selectAll(".bg-particle").attr("fill", d => d.color);
+                    break;
+                
+                case 3: // Sorting Chaos
+                    // Open gap in wall
+                    centerWall.transition().duration(500).attr("y2", boxHeight/2 - 30);
+                    
+                    const lowerWall = gCenter.selectAll(".lower-wall").data([1]);
+                    lowerWall.enter().append("line")
+                        .attr("class", "lower-wall")
+                        .attr("x1", boxWidth/2)
+                        .attr("x2", boxWidth/2)
+                        .attr("stroke", "#475569")
+                        .attr("stroke-width", 6)
+                        .merge(lowerWall)
+                        .attr("y1", boxHeight/2 + 30)
+                        .attr("y2", boxHeight)
+                        .attr("opacity", 1);
+                    break;
+
+                case 4: // Breaking the Law (Sorted state)
+                    demonEye.transition().duration(500).attr("opacity", 1);
+                    // Colors shift to emphasize
+                    animParticles.forEach(p => p.color = p.isHot ? '#fca5a5' : '#93c5fd');
+                    gCenter.selectAll(".bg-particle").transition().duration(1000).attr("fill", d => d.color);
+                    break;
+
+                case 5: // Resolution (Information)
+                    // Demon turns red
+                    break;
+            }
+        }
+
+
+        /* ==========================================
+           Interactive Simulation (Canvas based for perf)
+           ========================================== */
+        const simCanvas = document.getElementById('sim-canvas');
+        const ctx = simCanvas.getContext('2d');
+        const simContainer = document.getElementById('simulation-container');
+        
+        let simWidth, simHeight;
+        let particles = [];
+        const numSimParticles = 300;
+        let doorOpen = false;
+        let autoDemonMode = false;
+        
+        // Sim constants
+        const particleRadius = 4;
+        const maxSpeed = 8;
+        let doorGap = 100;
+        
+        // UI Elements
+        const tempLeftEl = document.getElementById('temp-left');
+        const tempRightEl = document.getElementById('temp-right');
+        const doorIndicator = document.getElementById('door-indicator');
+
+        function resizeSim() {
+            simWidth = simContainer.clientWidth;
+            simHeight = simContainer.clientHeight;
+            // Handle high DPI displays
+            const dpr = window.devicePixelRatio || 1;
+            simCanvas.width = simWidth * dpr;
+            simCanvas.height = simHeight * dpr;
+            ctx.scale(dpr, dpr);
+            doorGap = simHeight * 0.3; // 30% of height
+        }
+
+        function initSim() {
+            resizeSim();
+            particles = [];
+            for (let i = 0; i < numSimParticles; i++) {
+                // Initialize evenly distributed
+                const isLeft = Math.random() > 0.5;
+                const isHot = Math.random() > 0.5;
+                
+                // Speed magnitude: hot is fast, cold is slow
+                const speed = isHot ? 4 + Math.random()*2 : 1 + Math.random()*1.5;
+                const angle = Math.random() * Math.PI * 2;
+                
+                particles.push({
+                    x: isLeft ? Math.random() * (simWidth/2 - 20) + 10 : simWidth/2 + 10 + Math.random() * (simWidth/2 - 20),
+                    y: Math.random() * (simHeight - 20) + 10,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    isHot: isHot,
+                    r: isHot ? 3 : 5 // Visual distinction
+                });
+            }
+        }
+
+        function updateSim() {
+            const wallX = simWidth / 2;
+            const doorTop = simHeight / 2 - doorGap / 2;
+            const doorBottom = simHeight / 2 + doorGap / 2;
+
+            let kineticLeft = 0;
+            let countLeft = 0;
+            let kineticRight = 0;
+            let countRight = 0;
+
+            // Auto-Demon Logic
+            if (autoDemonMode) {
+                doorOpen = false;
+                // Look ahead for particles near door
+                const senseRadius = 50;
+                for (let p of particles) {
+                    const distToWall = Math.abs(p.x - wallX);
+                    const nearDoorY = p.y > doorTop && p.y < doorBottom;
+                    
+                    if (distToWall < senseRadius && nearDoorY) {
+                        // If hot moving right, open. If cold moving left, open.
+                        if (p.isHot && p.vx > 0 && p.x < wallX) doorOpen = true;
+                        if (!p.isHot && p.vx < 0 && p.x > wallX) doorOpen = true;
+                    }
+                }
+                updateDoorVisual();
+            }
+
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Outer boundary collisions
+                if (p.x < p.r) { p.x = p.r; p.vx *= -1; }
+                if (p.x > simWidth - p.r) { p.x = simWidth - p.r; p.vx *= -1; }
+                if (p.y < p.r) { p.y = p.r; p.vy *= -1; }
+                if (p.y > simHeight - p.r) { p.y = simHeight - p.r; p.vy *= -1; }
+
+                // Center Wall collision
+                if (!doorOpen || p.y <= doorTop || p.y >= doorBottom) {
+                    // Check if crossing center
+                    const prevX = p.x - p.vx;
+                    if ((prevX < wallX && p.x + p.r >= wallX) || 
+                        (prevX > wallX && p.x - p.r <= wallX)) {
+                        
+                        // Push back and reverse
+                        if (prevX < wallX) {
+                            p.x = wallX - p.r;
+                            p.vx *= -1;
+                        } else {
+                            p.x = wallX + p.r;
+                            p.vx *= -1;
+                        }
+                    }
+                }
+
+                // Temp calc
+                const vSquared = p.vx*p.vx + p.vy*p.vy;
+                if (p.x < wallX) {
+                    kineticLeft += vSquared;
+                    countLeft++;
+                } else {
+                    kineticRight += vSquared;
+                    countRight++;
+                }
+            });
+
+            // Averages (pseudo-temperature)
+            const tLeft = countLeft === 0 ? 0 : Math.round((kineticLeft / countLeft) * 10);
+            const tRight = countRight === 0 ? 0 : Math.round((kineticRight / countRight) * 10);
+            
+            // Throttle UI updates slightly for performance
+            if(Math.random() < 0.1) {
+                tempLeftEl.innerText = tLeft;
+                tempRightEl.innerText = tRight;
+                
+                // Color intensity based on temp
+                const maxT = 300;
+                const ratioL = Math.min(tLeft / maxT, 1);
+                const ratioR = Math.min(tRight / maxT, 1);
+            }
+        }
+
+        function drawSim() {
+            // Clear
+            ctx.fillStyle = '#1e293b'; // slate-800
+            ctx.fillRect(0, 0, simWidth, simHeight);
+
+            // Draw center wall
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            const wallX = simWidth / 2;
+            const doorTop = simHeight / 2 - doorGap / 2;
+            const doorBottom = simHeight / 2 + doorGap / 2;
+
+            if (doorOpen) {
+                // Top wall
+                ctx.moveTo(wallX, 0);
+                ctx.lineTo(wallX, doorTop);
+                // Bottom wall
+                ctx.moveTo(wallX, doorBottom);
+                ctx.lineTo(wallX, simHeight);
+                ctx.stroke();
+                
+                // Draw open indicator
+                ctx.fillStyle = 'rgba(139, 92, 246, 0.1)';
+                ctx.fillRect(wallX - 20, doorTop, 40, doorGap);
+            } else {
+                // Solid wall
+                ctx.moveTo(wallX, 0);
+                ctx.lineTo(wallX, simHeight);
+                ctx.stroke();
+            }
+
+            // Draw particles
+            // Batch drawing by color for better performance
+            ctx.fillStyle = '#ef4444'; // Hot
+            ctx.beginPath();
+            particles.forEach(p => {
+                if(p.isHot) {
+                    ctx.moveTo(p.x + p.r, p.y);
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                }
+            });
+            ctx.fill();
+
+            ctx.fillStyle = '#3b82f6'; // Cold
+            ctx.beginPath();
+            particles.forEach(p => {
+                if(!p.isHot) {
+                    ctx.moveTo(p.x + p.r, p.y);
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                }
+            });
+            ctx.fill();
+        }
+
+        function simLoop() {
+            updateSim();
+            drawSim();
+            requestAnimationFrame(simLoop);
+        }
+
+        function updateDoorVisual() {
+            if(doorOpen) {
+                doorIndicator.classList.add('opacity-0');
+            } else {
+                doorIndicator.classList.remove('opacity-0');
+            }
+        }
+
+        // Desktop interaction
+        simContainer.addEventListener('mousedown', () => {
+            if(!autoDemonMode) {
+                doorOpen = true;
+                updateDoorVisual();
+            }
+        });
+        window.addEventListener('mouseup', () => {
+             if(!autoDemonMode) {
+                doorOpen = false;
+                updateDoorVisual();
+             }
+        });
+
+        // Touch interaction
+        simContainer.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent scrolling while playing
+            if(!autoDemonMode) {
+                doorOpen = true;
+                updateDoorVisual();
+            }
+        }, {passive: false});
+        window.addEventListener('touchend', () => {
+             if(!autoDemonMode) {
+                doorOpen = false;
+                updateDoorVisual();
+             }
+        });
+
+        // Controls
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            initSim();
+        });
+
+        const btnAuto = document.getElementById('btn-auto');
+        btnAuto.addEventListener('click', () => {
+            autoDemonMode = !autoDemonMode;
+            if (autoDemonMode) {
+                btnAuto.classList.replace('bg-demon', 'bg-red-600');
+                btnAuto.classList.replace('hover:bg-violet-600', 'hover:bg-red-700');
+                btnAuto.innerText = "Stop Auto-Demon";
+                doorIndicator.style.display = 'none';
+            } else {
+                btnAuto.classList.replace('bg-red-600', 'bg-demon');
+                btnAuto.classList.replace('hover:bg-red-700', 'hover:bg-violet-600');
+                btnAuto.innerText = "Auto-Demon (AI)";
+                doorOpen = false;
+                doorIndicator.style.display = 'flex';
+                updateDoorVisual();
+            }
+        });
+
+        window.addEventListener('resize', resizeSim);
+
+        // Start everything
+        initSim();
+        simLoop();
+
+    </script>
+</body>
+</html>
