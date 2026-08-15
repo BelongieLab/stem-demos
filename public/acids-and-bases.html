@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Power of Hydrogen (pH)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Dark background typical of 3b1b style */
+            color: #f8fafc;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+        }
+
+        #scrolly {
+            position: relative;
+            padding: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        article {
+            position: relative;
+            padding: 0;
+            max-width: 30rem; /* Width of text blocks */
+            margin: 0 auto;
+            pointer-events: none; /* Let clicks pass through to the canvas underneath */
+            z-index: 10;
+            padding-top: 10vh;
+        }
+
+        .step {
+            margin: 0 auto 80vh auto;
+            background-color: rgba(30, 41, 59, 0.85); /* Slightly transparent slate */
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            opacity: 0.2;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease;
+            transform: translateY(20px);
+            pointer-events: auto; /* Re-enable pointer events for the text boxes */
+        }
+
+        .step:last-child {
+            margin-bottom: 30vh; /* Less margin at the very end */
+        }
+
+        .step.is-active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #graphic {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .highlight-acid { color: #ef4444; font-weight: bold; } /* Red for acid */
+        .highlight-base { color: #3b82f6; font-weight: bold; } /* Blue for base */
+        .highlight-neutral { color: #10b981; font-weight: bold; } /* Green for neutral */
+        .highlight-math { color: #fbbf24; font-family: monospace; font-size: 1.1em;} /* Yellow for math concepts */
+
+        /* A simple loader */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #0f172a;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.1);
+            border-top-color: #fbbf24;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    </style>
+    <!-- Include Scrollama for scrollytelling logic -->
+    <script src="https://unpkg.com/scrollama"></script>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <p class="mt-4 text-gray-400 font-mono text-sm tracking-widest uppercase">Preparing the Laboratory...</p>
+    </div>
+
+    <main id="scrolly">
+        
+        <!-- The visual layer that sticks to the background -->
+        <figure id="graphic">
+            <canvas id="animation-canvas"></canvas>
+        </figure>
+
+        <!-- The text layer that scrolls over the graphic -->
+        <article>
+            
+            <!-- Step 0: Intro -->
+            <div class="step" data-step="0">
+                <h1 class="text-4xl md:text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-green-400 to-blue-400">The Secret Language of Liquids</h1>
+                <p class="text-lg leading-relaxed text-gray-300">
+                    Have you ever bitten into a lemon and felt your face pucker? Or washed your hands with slippery soap? 
+                </p>
+                <p class="text-lg leading-relaxed text-gray-300 mt-4">
+                    Without knowing it, you were conducting chemistry experiments! You were tasting an <span class="highlight-acid">acid</span> and feeling a <span class="highlight-base">base</span>. 
+                    Scroll down to discover the hidden scale that scientists use to measure these invisible powers.
+                </p>
+            </div>
+
+            <!-- Step 1: Meet the Ions -->
+            <div class="step" data-step="1">
+                <h2 class="text-3xl font-bold mb-4 text-white">A Tale of Two Ions</h2>
+                <p class="text-lg leading-relaxed text-gray-300">
+                    To understand acids and bases, we need to zoom way, <i>way</i> in. In any watery liquid, tiny particles are constantly bumping into each other.
+                </p>
+                <p class="text-lg leading-relaxed text-gray-300 mt-4">
+                    Sometimes, water breaks apart into two important pieces:<br>
+                    1. The <span class="highlight-acid">Hydrogen ion (H⁺)</span> - We'll call him the spicy, energetic one.<br>
+                    2. The <span class="highlight-base">Hydroxide ion (OH⁻)</span> - The calm, slippery one.
+                </p>
+            </div>
+
+            <!-- Step 2: The Balance (Neutral) -->
+            <div class="step" data-step="2">
+                <h2 class="text-3xl font-bold mb-4 text-green-400">Perfect Harmony</h2>
+                <p class="text-lg leading-relaxed text-gray-300">
+                    In pure water, these two ions are perfectly balanced. For every spicy <span class="highlight-acid">H⁺</span>, there is a calm <span class="highlight-base">OH⁻</span>. 
+                </p>
+                <p class="text-lg leading-relaxed text-gray-300 mt-4">
+                    They cancel each other out, holding hands to become water again. We call a liquid like this <span class="highlight-neutral">Neutral</span>. It's neither acidic nor basic.
+                </p>
+            </div>
+
+            <!-- Step 3: Acids -->
+            <div class="step" data-step="3">
+                <h2 class="text-3xl font-bold mb-4 text-red-400">Acids: The Rule of H⁺</h2>
+                <p class="text-lg leading-relaxed text-gray-300">
+                    But what happens when we squeeze lemon juice into the water? The lemon releases a huge army of <span class="highlight-acid">Hydrogen ions (H⁺)</span>!
+                </p>
+                <p class="text-lg leading-relaxed text-gray-300 mt-4">
+                    When the <span class="highlight-acid">H⁺ ions</span> outnumber the <span class="highlight-base">OH⁻ ions</span>, the liquid becomes an <span class="highlight-acid">Acid</span>. Acids taste sour and can sometimes react strongly with metals.
+                </p>
+                <ul class="list-disc pl-6 mt-4 text-gray-400 text-sm">
+                    <li>Lemon juice</li>
+                    <li>Vinegar</li>
+                    <li>Battery acid</li>
+                    <li>Soda</li>
+                </ul>
+            </div>
+
+            <!-- Step 4: Bases -->
+            <div class="step" data-step="4">
+                <h2 class="text-3xl font-bold mb-4 text-blue-400">Bases: The Rise of OH⁻</h2>
+                <p class="text-lg leading-relaxed text-gray-300">
+                    Now, let's look at soap. When soap dissolves, it does the opposite. It releases a crowd of <span class="highlight-base">Hydroxide ions (OH⁻)</span>.
+                </p>
+                <p class="text-lg leading-relaxed text-gray-300 mt-4">
+                    When the <span class="highlight-base">OH⁻ ions</span> outnumber the <span class="highlight-acid">H⁺ ions</span>, the liquid is a <span class="highlight-base">Base</span> (sometimes called alkaline). Bases feel slippery and taste bitter.
+                </p>
+                <ul class="list-disc pl-6 mt-4 text-gray-400 text-sm">
+                    <li>Soap</li>
+                    <li>Baking soda</li>
+                    <li>Bleach</li>
+                    <li>Seawater</li>
+                </ul>
+            </div>
+
+            <!-- Step 5: Introducing the Scale -->
+            <div class="step" data-step="5">
+                <h2 class="text-3xl font-bold mb-4 text-yellow-400">The pH Scale</h2>
+                <p class="text-lg leading-relaxed text-gray-300">
+                    Scientists needed a way to measure exactly <i>how</i> acidic or basic a liquid is, rather than just tasting it (which can be dangerous!).
+                </p>
+                <p class="text-lg leading-relaxed text-gray-300 mt-4">
+                    They created a ruler called the <span class="highlight-math">pH Scale</span>. It usually goes from <span class="highlight-math">0 to 14</span>.
+                </p>
+                <p class="text-sm mt-4 text-gray-400 italic">
+                    Think of it as measuring the "Power of Hydrogen".
+                </p>
+            </div>
+
+            <!-- Step 6: How the Scale Works -->
+            <div class="step" data-step="6">
+                <h2 class="text-3xl font-bold mb-4 text-white">Reading the Ruler</h2>
+                <p class="text-lg leading-relaxed text-gray-300">
+                    Here is how you read the pH ruler:
+                </p>
+                <ul class="mt-4 space-y-2">
+                    <li><span class="highlight-math">pH 7</span> is perfectly <span class="highlight-neutral">Neutral</span> (pure water).</li>
+                    <li>Numbers <span class="highlight-math">less than 7</span> are <span class="highlight-acid">Acids</span>. The lower the number, the stronger the acid. (0 is super strong!)</li>
+                    <li>Numbers <span class="highlight-math">greater than 7</span> are <span class="highlight-base">Bases</span>. The higher the number, the stronger the base. (14 is very strong!)</li>
+                </ul>
+            </div>
+
+            <!-- Step 7: The Math Secret -->
+            <div class="step" data-step="7">
+                <h2 class="text-3xl font-bold mb-4 text-purple-400">A Mathematical Secret</h2>
+                <p class="text-lg leading-relaxed text-gray-300">
+                    The pH scale hides a mathematical superpower. It's not like a normal ruler. It's a <span class="highlight-math">logarithmic</span> scale.
+                </p>
+                <p class="text-lg leading-relaxed text-gray-300 mt-4">
+                    This means every time you move exactly one whole number on the scale, the liquid becomes <span class="font-bold">10 times</span> more acidic or basic! 
+                </p>
+                <p class="text-sm mt-4 text-gray-400">
+                    A pH of 5 is 10 times more acidic than a pH of 6. A pH of 4 is 100 (10x10) times more acidic than a pH of 6! <br><br>
+                    You might have heard of other logarithmic scales without realizing it: the <b>Richter scale</b> for measuring earthquakes and <b>decibels</b> for measuring sound work the exact same way!
+                </p>
+            </div>
+
+            <!-- Step 8: The Inventor -->
+            <div class="step" data-step="8">
+                <h2 class="text-3xl font-bold mb-4 text-white">The Men Behind the Scale</h2>
+                <p class="text-lg leading-relaxed text-gray-300">
+                    Who invented this clever system? In 1909, a Danish chemist named <span class="text-white font-bold">Søren Peder Lauritz Sørensen</span> was working in Copenhagen.
+                </p>
+                <p class="text-lg leading-relaxed text-gray-300 mt-4">
+                    He was studying proteins for a brewery and needed a simple way to express the concentration of those tiny <span class="highlight-acid">H⁺</span> ions. He introduced the concept of pH, changing chemistry forever.
+                </p>
+                <p class="text-sm mt-4 text-gray-400 italic">
+                    Fun fact: The 'p' in pH might stand for 'power' (potentia in Latin or potenz in German) of Hydrogen, but historians aren't entirely sure—Sørensen never explicitly wrote down why he chose the letter 'p'!
+                </p>
+            </div>
+
+            <!-- Step 9: The Measurement Revolution -->
+            <div class="step" data-step="9">
+                <h2 class="text-3xl font-bold mb-4 text-yellow-400">Making it Practical</h2>
+                <p class="text-lg leading-relaxed text-gray-300">
+                    Sørensen gave us the math, but measuring it was still difficult. Enter <span class="text-white font-bold">Arnold Beckman</span>, a professor at the California Institute of Technology (Caltech).
+                </p>
+                <p class="text-lg leading-relaxed text-gray-300 mt-4">
+                    In 1934, a local citrus grower asked Beckman for a better way to measure the acidity of lemon juice. Beckman invented the first electronic <b>pH meter</b>, a device that revolutionized biology and chemistry by making pH measurement fast and easy!
+                </p>
+            </div>
+
+            <!-- Step 10: Conclusion & Interactive Scale -->
+            <div class="step" data-step="10">
+                <h2 class="text-3xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-400">Chemistry All Around Us</h2>
+                <p class="text-lg leading-relaxed text-gray-300 mb-6">
+                    Now you know the secret! The world is one giant, colorful pH scale. Try sliding the marker below to discover the pH of everyday items.
+                </p>
+                
+                <!-- Interactive pH Slider Playground -->
+                <div class="mt-6 p-6 bg-slate-800 rounded-xl border border-slate-600 shadow-inner relative z-20 pointer-events-auto">
+                    <label for="interactive-ph" class="block text-sm font-medium text-gray-300 mb-2">Explore the pH Scale:</label>
+                    
+                    <div class="flex items-center space-x-4 mb-4">
+                        <span class="text-red-400 font-bold">Acid</span>
+                        <input type="range" id="interactive-ph" min="0" max="14" step="1" value="7" class="w-full h-2 bg-gradient-to-r from-red-500 via-green-500 to-blue-500 rounded-lg appearance-none cursor-pointer">
+                        <span class="text-blue-400 font-bold">Base</span>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <div class="text-4xl font-bold font-mono mb-2" id="playground-ph-display">pH 7</div>
+                        <div class="text-xl text-yellow-300 min-h-[3rem] flex items-center justify-center transition-all duration-300" id="playground-item-display">
+                            Pure Water 💧
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://d3js.org/d3-color.v3.min.js"></script>
+    <script src="https://d3js.org/d3-interpolate.v3.min.js"></script>
+
+    <script>
+        
+        // 1. Catch ResizeObserver errors via window.onerror (more robust for some environments)
+        window.onerror = function(msg) {
+            if (typeof msg === 'string' && msg.includes('ResizeObserver loop')) {
+                return true; // Prevents the error from showing in the console
+            }
+        };
+
+        // 2. Catch ResizeObserver errors via event listener
+        window.addEventListener('error', function(e) {
+            if (e.message && e.message.includes('ResizeObserver loop')) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+            }
+        });
+
+        // 3. Ultimate fix: Monkey-patch ResizeObserver to execute callbacks in the next animation frame.
+        // This prevents Scrollama or other libraries from triggering a layout loop in the same frame.
+        const _ResizeObserver = window.ResizeObserver;
+        window.ResizeObserver = class ResizeObserver extends _ResizeObserver {
+            constructor(callback) {
+                super((entries, observer) => {
+                    window.requestAnimationFrame(() => {
+                        callback(entries, observer);
+                    });
+                });
+            }
+        };
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            
+            // Remove loader when ready
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => document.getElementById('loader').remove(), 500);
+            }, 1000);
+
+            // --- Three.js Setup ---
+            const canvas = document.getElementById('animation-canvas');
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            
+            // Set pixel ratio for high DPI displays to make it look sharp
+            renderer.setPixelRatio(window.devicePixelRatio);
+            
+            const scene = new THREE.Scene();
+            // Fog helps create depth and a 'liquid' feel
+            scene.fog = new THREE.FogExp2(0x0f172a, 0.02);
+
+            // Camera setup - looking slightly down
+            const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 30;
+            camera.position.y = 5;
+            camera.lookAt(0, 0, 0);
+
+            function resize() {
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            }
+            
+            const debouncedResize = debounce(resize, 100);
+            window.addEventListener('resize', debouncedResize);
+            resize(); // Initial sizing
+
+            // --- Lighting ---
+            // Ambient light for base visibility
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            // Directional lights for highlights on spheres
+            const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight1.position.set(10, 20, 10);
+            scene.add(dirLight1);
+
+            const dirLight2 = new THREE.DirectionalLight(0x4444ff, 0.5);
+            dirLight2.position.set(-10, -10, -10);
+            scene.add(dirLight2);
+
+            // Materials for H+ (Acid, Red), OH- (Base, Blue), and Water (Neutral, clear/white)
+            // Using MeshPhongMaterial for a nice, slightly shiny look
+            const matH = new THREE.MeshPhongMaterial({ 
+                color: 0xef4444, // Tailwind Red 500
+                emissive: 0x450a0a, 
+                shininess: 100 
+            });
+            const matOH = new THREE.MeshPhongMaterial({ 
+                color: 0x3b82f6, // Tailwind Blue 500
+                emissive: 0x172554,
+                shininess: 100 
+            });
+            const matNeutral = new THREE.MeshPhongMaterial({ 
+                color: 0x10b981, // Tailwind Emerald 500 (representing perfect balance)
+                emissive: 0x022c22,
+                transparent: true,
+                opacity: 0.8,
+                shininess: 50 
+            });
+
+            // Geometry for particles
+            const sphereGeo = new THREE.SphereGeometry(0.5, 32, 32);
+
+            // Arrays to hold our particle meshes
+            let particles = [];
+            const maxParticles = 200;
+            const bounds = 25; // How far they can float
+            
+            let currentBehavior = 'normal'; // Global state for particle physics
+
+            // Helper class to manage individual particles
+            class Ion {
+                constructor(type) {
+                    this.type = type; // 'H', 'OH', 'Water'
+                    
+                    let baseMaterial = matNeutral;
+                    if(type === 'H') baseMaterial = matH;
+                    if(type === 'OH') baseMaterial = matOH;
+
+                    // CLONE the material! This was the bug causing invisibility.
+                    // Without clone(), all 200 particles share one material. When half try to turn red
+                    // and half try to turn blue, the material color collapses to black.
+                    this.mesh = new THREE.Mesh(sphereGeo, baseMaterial.clone());
+                    
+                    // Random starting position within a box
+                    this.mesh.position.set(
+                        (Math.random() - 0.5) * bounds,
+                        (Math.random() - 0.5) * bounds,
+                        (Math.random() - 0.5) * (bounds - 10) // Keep them slightly flatter in Z
+                    );
+
+                    // Random velocity for Brownian motion simulation
+                    this.velocity = new THREE.Vector3(
+                        (Math.random() - 0.5) * 0.1,
+                        (Math.random() - 0.5) * 0.1,
+                        (Math.random() - 0.5) * 0.1
+                    );
+
+                    this.targetColor = baseMaterial.color.clone();
+                    scene.add(this.mesh);
+                }
+
+                update() {
+                    // Apply behavior-specific continuous forces
+                    if (currentBehavior === 'split') {
+                        if (this.type === 'H') this.velocity.x -= 0.005;
+                        if (this.type === 'OH') this.velocity.x += 0.005;
+                    } else if (currentBehavior === 'neutral') {
+                        // Slowly draw towards the center
+                        this.velocity.x -= this.mesh.position.x * 0.001;
+                        this.velocity.y -= this.mesh.position.y * 0.001;
+                        this.velocity.z -= this.mesh.position.z * 0.001;
+                    } else if (currentBehavior === 'acid') {
+                        if (this.type === 'H') {
+                            this.velocity.y += 0.01; // Float up like energetic bubbles
+                            this.velocity.x += (Math.random() - 0.5) * 0.02; // Erratic jitter
+                        }
+                    } else if (currentBehavior === 'base') {
+                        if (this.type === 'OH') {
+                            this.velocity.y -= 0.01; // Sink smoothly
+                            this.velocity.x += Math.sin(Date.now() * 0.002) * 0.01; // Wave motion
+                        }
+                    }
+
+                    // Move based on velocity
+                    this.mesh.position.add(this.velocity);
+
+                    // Strict boundary check - bounce back if they go too far and reset position
+                    if (Math.abs(this.mesh.position.x) > bounds / 2) {
+                        this.velocity.x *= -1;
+                        this.mesh.position.x = Math.sign(this.mesh.position.x) * (bounds / 2);
+                    }
+                    if (Math.abs(this.mesh.position.y) > bounds / 2) {
+                        this.velocity.y *= -1;
+                        this.mesh.position.y = Math.sign(this.mesh.position.y) * (bounds / 2);
+                    }
+                    if (Math.abs(this.mesh.position.z) > bounds / 2) {
+                        this.velocity.z *= -1;
+                        this.mesh.position.z = Math.sign(this.mesh.position.z) * (bounds / 2);
+                    }
+
+                    // Add a tiny bit of random jitter (Brownian motion feel)
+                    this.velocity.x += (Math.random() - 0.5) * 0.01;
+                    this.velocity.y += (Math.random() - 0.5) * 0.01;
+                    this.velocity.z += (Math.random() - 0.5) * 0.01;
+
+                    // Clamp velocity to prevent them going crazy, but allow energetic bursts
+                    this.velocity.clampLength(0, 0.25);
+
+                    // Smooth color transition if we change state
+                    this.mesh.material.color.lerp(this.targetColor, 0.1);
+                }
+
+                changeType(newType) {
+                    this.type = newType;
+                    if(newType === 'H') {
+                        this.targetColor.setHex(0xef4444);
+                        this.mesh.material.emissive.setHex(0x450a0a);
+                        this.mesh.material.opacity = 1.0;
+                    } else if(newType === 'OH') {
+                        this.targetColor.setHex(0x3b82f6);
+                        this.mesh.material.emissive.setHex(0x172554);
+                        this.mesh.material.opacity = 1.0;
+                    } else {
+                        this.targetColor.setHex(0x10b981);
+                        this.mesh.material.emissive.setHex(0x022c22);
+                        this.mesh.material.opacity = 0.8;
+                    }
+                    
+                    // Adjust size based on type (H+ is smaller, OH- is larger)
+                    let targetScale = newType === 'H' ? 0.7 : (newType === 'OH' ? 1.2 : 1.0);
+                    this.mesh.scale.set(targetScale, targetScale, targetScale);
+                }
+            }
+
+            // Initialize with all 'neutral' particles
+            for(let i = 0; i < maxParticles; i++) {
+                particles.push(new Ion('Water'));
+            }
+
+            // Create a pH scale visualization element (HTML overlay)
+            const scaleContainer = document.createElement('div');
+            scaleContainer.id = 'ph-scale-vis';
+            scaleContainer.style.position = 'fixed';
+            scaleContainer.style.bottom = '2rem';
+            scaleContainer.style.left = '50%';
+            scaleContainer.style.transform = 'translateX(-50%)';
+            scaleContainer.style.width = '80%';
+            scaleContainer.style.maxWidth = '600px';
+            scaleContainer.style.height = '60px';
+            scaleContainer.style.display = 'none'; // Hidden initially
+            scaleContainer.style.opacity = '0';
+            scaleContainer.style.transition = 'opacity 1s ease-in-out';
+            scaleContainer.style.zIndex = '5';
+            
+            // Gradient background representing pH 0 to 14
+            scaleContainer.style.background = 'linear-gradient(to right, #ef4444, #fb923c, #facc15, #10b981, #06b6d4, #3b82f6, #6366f1, #8b5cf6)';
+            scaleContainer.style.borderRadius = '30px';
+            scaleContainer.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+            scaleContainer.style.border = '2px solid rgba(255,255,255,0.2)';
+            
+            // Marker on the scale
+            const marker = document.createElement('div');
+            marker.style.position = 'absolute';
+            marker.style.top = '-5px';
+            marker.style.left = '50%'; // Start at neutral
+            marker.style.width = '16px';
+            marker.style.height = '70px';
+            marker.style.backgroundColor = '#fff';
+            marker.style.borderRadius = '8px';
+            marker.style.boxShadow = '0 0 10px rgba(0,0,0,0.8)';
+            marker.style.transition = 'left 1s cubic-bezier(0.25, 1, 0.5, 1)';
+            marker.style.transform = 'translateX(-50%)'; // Center marker on its left pos
+            
+            // Marker text styled as a tooltip above the slider
+            const markerText = document.createElement('div');
+            markerText.innerText = 'pH 7';
+            markerText.style.position = 'absolute';
+            markerText.style.top = '-40px';
+            markerText.style.left = '50%';
+            markerText.style.transform = 'translateX(-50%)';
+            markerText.style.color = '#fff';
+            markerText.style.fontWeight = 'bold';
+            markerText.style.fontFamily = 'monospace';
+            markerText.style.fontSize = '1.1rem';
+            markerText.style.backgroundColor = '#1e293b';
+            markerText.style.padding = '4px 12px';
+            markerText.style.borderRadius = '8px';
+            markerText.style.border = '2px solid #475569';
+            markerText.style.whiteSpace = 'nowrap';
+            markerText.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
+
+            marker.appendChild(markerText);
+            scaleContainer.appendChild(marker);
+            document.body.appendChild(scaleContainer);
+
+            // Logarithmic scale visualizer
+            const mathViz = document.createElement('div');
+            mathViz.style.position = 'fixed';
+            mathViz.style.top = '50%';
+            mathViz.style.left = '50%';
+            mathViz.style.transform = 'translate(-50%, -50%)';
+            mathViz.style.fontSize = '8rem';
+            mathViz.style.fontWeight = 'bold';
+            mathViz.style.fontFamily = '"Playfair Display", serif';
+            mathViz.style.color = 'rgba(255, 255, 255, 0)'; // Transparent initially
+            mathViz.style.textShadow = '0 0 20px rgba(251, 191, 36, 0)';
+            mathViz.style.transition = 'all 0.5s ease';
+            mathViz.style.zIndex = '1';
+            mathViz.style.pointerEvents = 'none';
+            document.body.appendChild(mathViz);
+
+            // State management
+            let currentStep = 0;
+            
+            // Function to change the mixture of ions
+            // hPercent: 0-1, ohPercent: 0-1, rest become 'Water'
+            function setMixture(hPercent, ohPercent) {
+                const total = particles.length;
+                const hCount = Math.floor(total * hPercent);
+                const ohCount = Math.floor(total * ohPercent);
+                
+                for(let i = 0; i < total; i++) {
+                    if (i < hCount) particles[i].changeType('H');
+                    else if (i < hCount + ohCount) particles[i].changeType('OH');
+                    else particles[i].changeType('Water');
+                }
+            }
+
+            function updatePHScale(phValue) {
+                // phValue from 0 to 14
+                // Convert to percentage for left position (0% to 100%)
+                const percentage = (phValue / 14) * 100;
+                marker.style.left = `${percentage}%`;
+                markerText.innerText = `pH ${phValue}`;
+            }
+
+            // Define the visual state for each step of the story
+            const stepActions = {
+                0: () => {
+                    // Intro - Gentle generic movement, mostly neutral water
+                    currentBehavior = 'normal';
+                    setMixture(0.05, 0.05); // Just a few ions floating around
+                    scaleContainer.style.opacity = '0';
+                    setTimeout(() => scaleContainer.style.display = 'none', 1000);
+                    mathViz.style.color = 'rgba(255,255,255,0)';
+                    camera.position.z = 30; // Reset camera
+                },
+                1: () => {
+                    // Meet the ions - 50/50 split H+ and OH-
+                    currentBehavior = 'split';
+                    setMixture(0.5, 0.5);
+                    scaleContainer.style.opacity = '0';
+                    mathViz.style.color = 'rgba(255,255,255,0)';
+                    
+                    // Give them an initial explosive push apart
+                    particles.forEach((p) => {
+                        if (p.type === 'H') p.velocity.x = -0.3;
+                        else if (p.type === 'OH') p.velocity.x = 0.3;
+                    });
+                    
+                    // Zoom in slightly
+                    camera.position.z = 25;
+                },
+                2: () => {
+                    // Neutral balance - All turn to green/water, clump together
+                    currentBehavior = 'neutral';
+                    setMixture(0, 0); // 100% water
+                    scaleContainer.style.opacity = '0';
+                    mathViz.style.color = 'rgba(255,255,255,0)';
+                },
+                3: () => {
+                    // Acids - Mostly H+ (Red) bursting outwards
+                    currentBehavior = 'acid';
+                    setMixture(0.8, 0.05); 
+                    scaleContainer.style.opacity = '0';
+                    mathViz.style.color = 'rgba(255,255,255,0)';
+                    
+                    particles.forEach(p => {
+                        if(p.type === 'H') {
+                            // Give red ions an energetic burst outwards
+                            p.velocity.set(
+                                (Math.random() - 0.5) * 0.5,
+                                (Math.random() - 0.5) * 0.5,
+                                (Math.random() - 0.5) * 0.5
+                            );
+                        }
+                    });
+                },
+                4: () => {
+                    // Bases - Mostly OH- (Blue) sweeping in
+                    currentBehavior = 'base';
+                    setMixture(0.05, 0.8);
+                    scaleContainer.style.opacity = '0';
+                    mathViz.style.color = 'rgba(255,255,255,0)';
+                },
+                5: () => {
+                    // Introduce Scale - Show UI scale, reset ions to neutral
+                    currentBehavior = 'normal';
+                    setMixture(0, 0);
+                    scaleContainer.style.display = 'block';
+                    // small timeout to allow display:block to apply before opacity transition
+                    setTimeout(() => scaleContainer.style.opacity = '1', 50);
+                    updatePHScale(7);
+                    mathViz.style.color = 'rgba(255,255,255,0)';
+                },
+                6: () => {
+                    // Reading the ruler - Animate scale back and forth
+                    currentBehavior = 'split'; // Gentle split to look interesting while scale moves
+                    scaleContainer.style.opacity = '1';
+                    mathViz.style.color = 'rgba(255,255,255,0)';
+                    
+                    // A little sequence to show acidity then basicity
+                    setMixture(0.9, 0.01);
+                    updatePHScale(2);
+                    
+                    setTimeout(() => {
+                        if(currentStep === 6) { // Make sure we are still on this step
+                            setMixture(0.01, 0.9);
+                            updatePHScale(12);
+                        }
+                    }, 2500);
+                },
+                7: () => {
+                    // Logarithmic Math secret
+                    currentBehavior = 'acid';
+                    scaleContainer.style.opacity = '1';
+                    updatePHScale(5);
+                    setMixture(0.6, 0.1);
+
+                    // Show big 10x text
+                    mathViz.innerText = "10x";
+                    mathViz.style.color = 'rgba(251, 191, 36, 0.8)'; // Yellowish
+                    mathViz.style.textShadow = '0 0 40px rgba(251, 191, 36, 0.5)';
+                    mathViz.style.transform = 'translate(-50%, -50%) scale(1)';
+
+                    setTimeout(() => {
+                        if(currentStep === 7) {
+                            updatePHScale(4);
+                            setMixture(0.8, 0.05);
+                            mathViz.innerText = "100x";
+                            mathViz.style.transform = 'translate(-50%, -50%) scale(1.2)';
+                        }
+                    }, 2000);
+                },
+                8: () => {
+                    // Sørensen History
+                    currentBehavior = 'normal';
+                    scaleContainer.style.opacity = '0';
+                    mathViz.style.color = 'rgba(255,255,255,0)';
+                    
+                    // Create an abstract look for "protein study"
+                    // Calm, slow moving, mixed, maybe slightly acidic (beer/brewing)
+                    setMixture(0.6, 0.2); 
+                    
+                    // Slow down velocity for this scene
+                    particles.forEach(p => {
+                        p.velocity.multiplyScalar(0.2);
+                    });
+                },
+                9: () => {
+                    // Beckman History
+                    currentBehavior = 'normal';
+                    scaleContainer.style.opacity = '0';
+                    mathViz.style.color = 'rgba(255,255,255,0)';
+                    
+                    // Citrus colors - orange/yellow/acidic vibe
+                    setMixture(0.7, 0.1); 
+                    particles.forEach(p => {
+                        if(p.type === 'Water') p.mesh.material.color.setHex(0xf59e0b); // yellow-orange
+                    });
+                },
+                10: () => {
+                    // Conclusion - A vibrant mix, interactive playground active
+                    currentBehavior = 'normal';
+                    scaleContainer.style.display = 'none'; // Hide the sticky scale to make room for interactive one
+                    scaleContainer.style.opacity = '0';
+                    mathViz.style.color = 'rgba(255,255,255,0)';
+                    
+                    // Initialize the interactive playground 3D state
+                    updatePlayground3D(7); 
+                }
+            };
+
+            // Initialize Scrollama
+            const scroller = scrollama();
+
+            scroller
+                .setup({
+                    step: ".step",
+                    offset: 0.5, // Trigger when element hits middle of screen
+                    debug: false
+                })
+                .onStepEnter((response) => {
+                    // { element, index, direction }
+                    currentStep = response.index;
+                    
+                    // Update HTML classes for styling the active text box
+                    document.querySelectorAll('.step').forEach((el, i) => {
+                        if (i === currentStep) el.classList.add('is-active');
+                        else el.classList.remove('is-active');
+                    });
+
+                    // Trigger the 3D scene changes
+                    if (stepActions[currentStep]) {
+                        stepActions[currentStep]();
+                    }
+                });
+
+            const debouncedScrollerResize = debounce(() => {
+                scroller.resize();
+            }, 200);
+
+            window.addEventListener("resize", debouncedScrollerResize);
+
+            // --- Interactive Playground Logic ---
+            const phSlider = document.getElementById('interactive-ph');
+            const phDisplay = document.getElementById('playground-ph-display');
+            const itemDisplay = document.getElementById('playground-item-display');
+            
+            const phExamples = {
+                0: "Battery Acid 🔋 (Very Dangerous!)",
+                1: "Stomach Acid 🫀",
+                2: "Lemon Juice 🍋",
+                3: "Soda & Vinegar 🥤",
+                4: "Tomato Juice 🍅",
+                5: "Black Coffee ☕",
+                6: "Milk 🥛",
+                7: "Pure Water 💧 (Neutral)",
+                8: "Seawater & Eggs 🥚",
+                9: "Baking Soda 🧁",
+                10: "Milk of Magnesia 💊",
+                11: "Ammonia (Cleaners) 🧽",
+                12: "Soapy Water 🧼",
+                13: "Bleach 🧺",
+                14: "Liquid Drain Cleaner 🚰 (Very Dangerous!)"
+            };
+
+            function updatePlayground3D(phVal) {
+                // Adjust mixture based on slider. 
+                // pH < 7: more H+. pH > 7: more OH-.
+                let hPerc = 0;
+                let ohPerc = 0;
+                
+                if (phVal < 7) {
+                    hPerc = 1.0 - (phVal / 7); // 0 -> 1.0 H+, 6 -> ~0.14 H+
+                    ohPerc = 0.05;
+                } else if (phVal > 7) {
+                    ohPerc = (phVal - 7) / 7; // 14 -> 1.0 OH-, 8 -> ~0.14 OH-
+                    hPerc = 0.05;
+                }
+                
+                // Cap them so it looks decent
+                if(hPerc > 0.9) hPerc = 0.9;
+                if(ohPerc > 0.9) ohPerc = 0.9;
+
+                setMixture(hPerc, ohPerc);
+                
+                // Ensure water goes back to green (in case we came from step 9 citrus)
+                particles.forEach(p => {
+                    if(p.type === 'Water') p.mesh.material.color.copy(matNeutral.color);
+                });
+            }
+
+            phSlider.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value);
+                phDisplay.innerText = `pH ${val}`;
+                itemDisplay.innerText = phExamples[val] || "Unknown";
+                
+                // Color the text based on pH
+                if (val < 7) itemDisplay.className = "text-xl text-red-400 font-bold min-h-[3rem] flex items-center justify-center transition-all duration-300";
+                else if (val > 7) itemDisplay.className = "text-xl text-blue-400 font-bold min-h-[3rem] flex items-center justify-center transition-all duration-300";
+                else itemDisplay.className = "text-xl text-green-400 font-bold min-h-[3rem] flex items-center justify-center transition-all duration-300";
+                
+                updatePlayground3D(val);
+            });
+
+            // The main animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+
+                // Update particle positions
+                particles.forEach(p => p.update());
+
+                // Gently rotate the camera for a dynamic feel
+                const time = Date.now() * 0.0005;
+                camera.position.x = Math.sin(time * 0.5) * 5;
+                camera.position.y = Math.cos(time * 0.3) * 5;
+                camera.lookAt(0, 0, 0);
+
+                renderer.render(scene, camera);
+            }
+
+            // Kick off animation
+            animate();
+            
+            // Trigger step 0 initially
+            stepActions[0]();
+        });
+    </script>
+</body>
+</html>
