@@ -198,6 +198,19 @@ export default function Home() {
               Dollars, Euros, and Kroner! Explore how global currencies, exchange rates, and arbitrage work in this interactive scrollytelling lesson.
             </p>
           </Link>
+
+          <a 
+            href="/radioactivity.html" 
+            className="group block p-6 bg-[#111111] rounded-xl border border-white/5 hover:border-yellow-500/50 hover:bg-[#1a1a1a] transition-all duration-300"
+          >
+            <h2 className="text-2xl font-light tracking-wider text-white mb-2 group-hover:text-yellow-400 transition-colors">
+              What is Radioactivity?
+            </h2>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              Explore the quantum coin toss of atomic decay, the mathematics of half-lives, and the 14-step journey of Uranium to Lead in this interactive visualization.
+            </p>
+          </a>
+
           {/* Future demos will go here! */}
           
         </div>
