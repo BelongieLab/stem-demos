@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What is Radioactivity?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #141414; /* Manim Dark */
+            --text-color: #e0e0e0;
+            --accent-blue: #58C4DD;
+            --accent-red: #FC6255;
+            --accent-green: #83C167;
+            --accent-yellow: #FFFF00;
+            --accent-purple: #C70039;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Lora', serif;
+            margin: 0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3 {
+            font-weight: 600;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent-yellow);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none; /* Let clicks pass through to content */
+        }
+
+        #scroll-content {
+            position: relative;
+            z-index: 10;
+        }
+
+        .step {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0 5%;
+            opacity: 0.1;
+            transition: opacity 0.5s ease-out;
+            max-width: 600px;
+        }
+
+        .step.active {
+            opacity: 1;
+        }
+
+        .glass-box {
+            background: rgba(20, 20, 20, 0.75);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Mobile specific adjustments */
+        @media (max-width: 768px) {
+            .step {
+                padding: 0 5%;
+                max-width: 100%;
+                justify-content: center;
+                align-items: flex-end;
+                padding-bottom: 10vh;
+            }
+            .glass-box {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <canvas id="viz"></canvas>
+    </div>
+
+    <div id="scroll-content">
+        <!-- Scene 0 -->
+        <div class="step" data-scene="0">
+            <div class="glass-box">
+                <h1 class="text-4xl md:text-5xl mb-4 text-white">What is Radioactivity?</h1>
+                <p class="text-lg md:text-xl text-gray-300 mb-2">A visual exploration for August.</p>
+                <p class="text-sm text-gray-500 italic mt-6">Scroll down to explore &darr;</p>
+            </div>
+        </div>
+
+        <!-- Scene 1 -->
+        <div class="step" data-scene="1">
+            <div class="glass-box">
+                <h2 class="text-3xl mb-4 text-[var(--accent-blue)]">The Tense Nucleus</h2>
+                <p class="text-lg mb-4">At the heart of the atom lies a fragile balancing act.</p>
+                <p class="text-lg text-gray-300">
+                    Protons (<span style="color: var(--accent-red)">red</span>) vehemently repel each other due to the electromagnetic force. 
+                    They are only held together by the strong nuclear force, assisted by neutrons (<span style="color: var(--accent-blue)">blue</span>).
+                </p>
+            </div>
+        </div>
+
+        <!-- Scene 2 -->
+        <div class="step" data-scene="2">
+            <div class="glass-box">
+                <h2 class="text-3xl mb-4 text-[var(--accent-red)]">Alpha Decay</h2>
+                <p class="text-lg mb-4">Sometimes, a nucleus is simply too large to maintain this balance.</p>
+                <p class="text-lg text-gray-300">
+                    To reach a more stable state, the nucleus ejects a tightly packed cluster of two protons and two neutrons—an alpha particle. 
+                    The remaining nucleus is now a lighter element. It may finally be stable, or it might continue decaying in a chain until it finds peace.
+                </p>
+            </div>
+        </div>
+
+        <!-- Scene 3 -->
+        <div class="step" data-scene="3">
+            <div class="glass-box">
+                <h2 class="text-3xl mb-4 text-white">The Quantum Coin Toss</h2>
+                <p class="text-lg mb-4">If we look at a population of 100 unstable atoms, we encounter profound randomness.</p>
+                <p class="text-lg text-gray-300">
+                    We can never predict <i>when</i> a specific atom will decay. Each nucleus operates on quantum probability, completely independent of its neighbors.
+                </p>
+            </div>
+        </div>
+
+        <!-- Scene 4 -->
+        <div class="step" data-scene="4">
+            <div class="glass-box">
+                <h2 class="text-3xl mb-4 text-[var(--accent-yellow)]">Order from Chaos</h2>
+                <p class="text-lg mb-4">Yet, when viewing millions of atoms, chaos gives birth to perfect mathematical order.</p>
+                <p class="text-lg text-gray-300 mb-4">
+                    The rate of decay is strictly proportional to the number of remaining atoms. We express this elegantly as:
+                </p>
+                <div class="text-center my-6">
+                    <span class="math text-2xl">dN/dt = -λN</span>
+                </div>
+                <p class="text-lg text-gray-300">
+                    This beautiful differential equation dictates that the substance will decay along a flawless exponential curve.
+                </p>
+            </div>
+        </div>
+
+        <!-- Scene 5 -->
+        <div class="step" data-scene="5">
+            <div class="glass-box">
+                <h2 class="text-3xl mb-4 text-[var(--accent-green)]">The Half-Life</h2>
+                <p class="text-lg mb-4">Solving the equation reveals the exponential decay law:</p>
+                <div class="text-center my-6">
+                    <span class="math text-2xl">N(t) = N<sub>0</sub> e<sup>-λt</sup></span>
+                </div>
+                <p class="text-lg text-gray-300">
+                    This is why radioactive materials possess a "half-life"—the specific time it takes for exactly half of the remaining atoms to decay, no matter how much you started with.
+                </p>
+            </div>
+        </div>
+
+        <!-- Scene 6 -->
+        <div class="step" data-scene="6">
+            <div class="glass-box">
+                <h2 class="text-3xl mb-4 text-[var(--accent-yellow)]">Spotlight: Uranium & Its Journey</h2>
+                <p class="text-lg mb-4">Consider <b>Uranium-238</b>—one of the heaviest natural elements on Earth.</p>
+                <p class="text-lg text-gray-300">
+                    With 92 protons and 146 neutrons, its nucleus is extremely strained. Its first decay has a half-life of <b>4.5 billion years</b>! But ejecting one particle isn't enough to make it stable...
+                </p>
+            </div>
+        </div>
+
+        <!-- Scene 7 -->
+        <div class="step" data-scene="7">
+            <div class="glass-box">
+                <h2 class="text-3xl mb-4 text-[var(--accent-green)]">The Decay Chain: Landing at Lead</h2>
+                <p class="text-lg mb-4">Uranium triggers a cascade of <b>14 consecutive transformations</b>.</p>
+                <p class="text-lg text-gray-300 mb-3">
+                    It morphs through Thorium, Radium, and Radon gas—shedding 8 alpha particles and 6 beta particles over time.
+                </p>
+                <p class="text-lg text-gray-300">
+                    The cascade finally halts at <b>Lead-206 (Pb)</b>: a non-radioactive, perfectly stable nucleus that will rest unchanged for eternity.
+                </p>
+            </div>
+        </div>
+
+        <!-- Scene 8 -->
+        <div class="step" data-scene="8">
+            <div class="glass-box">
+                <h2 class="text-3xl mb-4 text-[var(--accent-blue)]">A Double-Edged Sword</h2>
+                <p class="text-lg mb-4">The word "radioactivity" often carries a fearful weight, and for valid reasons.</p>
+                <p class="text-lg text-gray-300 mb-4">
+                    Unleashing this immense binding energy has been used to create devastating weapons. However, it is crucial to remember that this exact same principle powers life-saving medicine.
+                </p>
+                <p class="text-lg text-gray-300">
+                    Isotopes like <b>Technetium-99m</b> are used daily to trace diseases, image organs, and precisely target cancer cells—turning atomic decay into a powerful tool for healing.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Padding at the bottom for smooth scrolling finish -->
+        <div style="height: 50vh;"></div>
+    </div>
+
+    <script>
+        /**
+         * 3B1B Style Canvas Scrollytelling
+         */
+        const canvas = document.getElementById('viz');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        let width, height;
+
+        // Colors
+        const C_BG = '#141414';
+        const C_PROTON = '#FC6255';
+        const C_NEUTRON = '#58C4DD';
+        const C_ALPHA = '#FFFF00';
+        const C_GRAPH = '#83C167';
+        const C_AXIS = '#e0e0e0';
+
+        // State
+        let scrollProgress = 0;
+        let globalTime = 0;
+
+        // Data Structures
+        const NUM_NUCLEONS = 60;
+        const nucleus = [];
+        let alphaParticleIndices = [];
+        
+        const NUM_GRID = 100;
+        const gridAtoms = [];
+        const decayTimes = [];
+
+        // Math utilities
+        function lerp(a, b, t) {
+            return a + (b - a) * Math.max(0, Math.min(1, t));
+        }
+
+        function easeInOutCubic(x) {
+            return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+        }
+
+        // Initialization
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+        }
+
+        function initParticles() {
+            // 1. Single massive nucleus (Scene 0 - 2)
+            for (let i = 0; i < NUM_NUCLEONS; i++) {
+                const radius = Math.random() * 40;
+                const angle = Math.random() * Math.PI * 2;
+                
+                nucleus.push({
+                    id: i,
+                    type: i % 2 === 0 ? 'proton' : 'neutron',
+                    baseX: Math.cos(angle) * radius,
+                    baseY: Math.sin(angle) * radius,
+                    phase: Math.random() * Math.PI * 2,
+                    isAlpha: false
+                });
+            }
+
+            // Select 2 protons and 2 neutrons at the edge for alpha decay
+            const edgeParticles = [...nucleus].sort((a, b) => {
+                const distA = a.baseX*a.baseX + a.baseY*a.baseY;
+                const distB = b.baseX*b.baseX + b.baseY*b.baseY;
+                return distB - distA;
+            });
+            
+            let pCount = 0, nCount = 0;
+            let alphaIndex = 0;
+            const alphaOffsets = [
+                {x: -4, y: -4}, {x: 4, y: -4}, 
+                {x: -4, y: 4},  {x: 4, y: 4}
+            ];
+
+            for (let p of edgeParticles) {
+                if (p.type === 'proton' && pCount < 2) { 
+                    p.isAlpha = true; 
+                    p.alphaTarget = alphaOffsets[alphaIndex++]; 
+                    alphaParticleIndices.push(p.id); 
+                    pCount++; 
+                }
+                if (p.type === 'neutron' && nCount < 2) { 
+                    p.isAlpha = true; 
+                    p.alphaTarget = alphaOffsets[alphaIndex++]; 
+                    alphaParticleIndices.push(p.id); 
+                    nCount++; 
+                }
+            }
+
+            // 2. Grid of 100 atoms (Scene 3+)
+            const cols = 10;
+            for (let i = 0; i < NUM_GRID; i++) {
+                const u = Math.random();
+                const lambda = 1.0;
+                const decayTime = -Math.log(1 - u) / lambda; 
+
+                gridAtoms.push({
+                    col: i % cols,
+                    row: Math.floor(i / cols),
+                    decayTime: decayTime
+                });
+                
+                decayTimes.push(decayTime);
+            }
+            
+            decayTimes.sort((a, b) => a - b);
+        }
+
+        // Scroll Tracking
+        function updateScroll() {
+            const maxScroll = document.body.scrollHeight - window.innerHeight;
+            scrollProgress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
+
+            const steps = document.querySelectorAll('.step');
+            steps.forEach(step => {
+                const rect = step.getBoundingClientRect();
+                if (rect.top < window.innerHeight * 0.75 && rect.bottom > window.innerHeight * 0.25) {
+                    step.classList.add('active');
+                } else {
+                    step.classList.remove('active');
+                }
+            });
+        }
+
+        window.addEventListener('resize', resize);
+        window.addEventListener('scroll', updateScroll);
+
+        function drawNucleus(ctx, centerX, centerY, scale, alphaSeparation, alphaOpacity) {
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            
+            nucleus.forEach(p => {
+                const jitterX = Math.sin(globalTime * 3 + p.phase) * 2;
+                const jitterY = Math.cos(globalTime * 3 + p.phase) * 2;
+                
+                let x, y;
+                let opacity = 1;
+
+                if (p.isAlpha) {
+                    const clumpX = 30 + p.alphaTarget.x;
+                    const clumpY = -10 + p.alphaTarget.y;
+                    
+                    const currentBaseX = lerp(p.baseX + jitterX, clumpX, alphaSeparation);
+                    const currentBaseY = lerp(p.baseY + jitterY, clumpY, alphaSeparation);
+                    
+                    x = currentBaseX * scale;
+                    y = currentBaseY * scale;
+
+                    x += alphaSeparation * 200 * scale;
+                    y -= alphaSeparation * 50 * scale; 
+                } else {
+                    x = (p.baseX + jitterX) * scale;
+                    y = (p.baseY + jitterY) * scale;
+                    opacity = alphaOpacity;
+                }
+
+                ctx.beginPath();
+                ctx.arc(x, y, 6 * scale, 0, Math.PI * 2);
+                ctx.fillStyle = p.type === 'proton' ? C_PROTON : C_NEUTRON;
+                ctx.globalAlpha = opacity;
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(x - 2 * scale, y - 2 * scale, 2 * scale, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.fill();
+            });
+
+            if (alphaSeparation < 0.1 && scale > 0.5) {
+                ctx.globalAlpha = 0.1;
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 15; i++) {
+                    const p1 = nucleus[Math.floor(Math.random() * nucleus.length)];
+                    const p2 = nucleus[Math.floor(Math.random() * nucleus.length)];
+                    if (!p1.isAlpha || !p2.isAlpha) {
+                        ctx.beginPath();
+                        ctx.moveTo((p1.baseX + Math.sin(globalTime*3+p1.phase)*2)*scale, (p1.baseY + Math.cos(globalTime*3+p1.phase)*2)*scale);
+                        ctx.lineTo((p2.baseX + Math.sin(globalTime*3+p2.phase)*2)*scale, (p2.baseY + Math.cos(globalTime*3+p2.phase)*2)*scale);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            ctx.restore();
+        }
+
+        function drawGrid(ctx, centerX, centerY, scale, graphProgress) {
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            
+            const spacing = 40 * scale;
+            const startX = -4.5 * spacing;
+            const startY = -4.5 * spacing;
+            
+            const simTime = graphProgress * 4.0;
+            
+            gridAtoms.forEach((atom, i) => {
+                const x = startX + atom.col * spacing;
+                const y = startY + atom.row * spacing;
+                
+                const hasDecayed = atom.decayTime < simTime;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 10 * scale, 0, Math.PI * 2);
+                
+                if (hasDecayed) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                    ctx.stroke();
+                } else {
+                    const pulse = Math.sin(globalTime * 5 + i) * 2 * scale;
+                    ctx.arc(x, y, 10 * scale + pulse, 0, Math.PI * 2);
+                    
+                    const grad = ctx.createRadialGradient(x, y, 0, x, y, 12 * scale);
+                    grad.addColorStop(0, C_NEUTRON);
+                    grad.addColorStop(1, C_PROTON);
+                    
+                    ctx.fillStyle = grad;
+                    ctx.globalAlpha = 0.8;
+                    ctx.fill();
+                }
+            });
+            
+            ctx.restore();
+        }
+
+        function drawGraph(ctx, bounds, graphProgress) {
+            const { x, y, w, h } = bounds;
+            
+            ctx.save();
+            ctx.translate(x, y);
+            
+            ctx.strokeStyle = C_AXIS;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, h);
+            ctx.lineTo(w, h);
+            ctx.stroke();
+
+            ctx.fillStyle = C_AXIS;
+            ctx.font = "14px 'Lora', serif";
+            ctx.fillText("Remaining (N)", 10, 20);
+            ctx.fillText("Time (t)", w - 60, h - 10);
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            const maxSimTime = 4.0;
+            const currentSimTime = graphProgress * maxSimTime;
+            
+            let currentN = 100;
+            let lastX = 0;
+            let lastY = 0;
+            
+            ctx.moveTo(lastX, lastY);
+            
+            for (let i = 0; i < decayTimes.length; i++) {
+                const dt = decayTimes[i];
+                if (dt > currentSimTime) break;
+                
+                const px = (dt / maxSimTime) * w;
+                const py = h - ((currentN / 100) * h);
+                
+                ctx.lineTo(px, py);
+                
+                currentN--;
+                const newPy = h - ((currentN / 100) * h);
+                ctx.lineTo(px, newPy);
+                
+                lastX = px;
+                lastY = newPy;
+            }
+            
+            if (currentSimTime > 0) {
+                const currentPx = (currentSimTime / maxSimTime) * w;
+                ctx.lineTo(currentPx, lastY);
+                ctx.stroke();
+            }
+
+            const theoreticalProgress = Math.max(0, (graphProgress - 0.5) * 2.0);
+            
+            if (theoreticalProgress > 0) {
+                ctx.strokeStyle = C_GRAPH;
+                ctx.lineWidth = 3;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                
+                const drawTimeLimit = theoreticalProgress * maxSimTime;
+                
+                for (let t = 0; t <= drawTimeLimit; t += 0.05) {
+                    const px = (t / maxSimTime) * w;
+                    const n_t = 100 * Math.exp(-1.0 * t);
+                    const py = h - ((n_t / 100) * h);
+                    
+                    if (t === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                const halfLifeTime = 0.693;
+                if (drawTimeLimit > halfLifeTime) {
+                    const hx = (halfLifeTime / maxSimTime) * w;
+                    const hy = h / 2;
+                    
+                    ctx.fillStyle = C_ALPHA;
+                    ctx.beginPath();
+                    ctx.arc(hx, hy, 5, 0, Math.PI*2);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = C_AXIS;
+                    ctx.fillText("Half-life (N = 50)", hx + 10, hy);
+                }
+            }
+
+            ctx.restore();
+        }
+
+        function drawDecayChain(ctx, centerX, centerY, scale, progress) {
+            ctx.save();
+            ctx.translate(centerX, centerY);
+
+            // Steps in chain
+            const steps = [
+                { symbol: "U-238", name: "Uranium", color: "#83C167", stable: false },
+                { symbol: "Th-234", name: "Thorium", color: "#FC6255", stable: false },
+                { symbol: "Ra-226", name: "Radium", color: "#58C4DD", stable: false },
+                { symbol: "Rn-222", name: "Radon", color: "#FFFF00", stable: false },
+                { symbol: "Pb-206", name: "Lead", color: "#8899A6", stable: true }
+            ];
+
+            // Determine active index based on progress 0 -> 1
+            const stageIndex = Math.min(steps.length - 1, Math.floor(progress * steps.length));
+            const currentStep = steps[stageIndex];
+            const nextStep = steps[Math.min(steps.length - 1, stageIndex + 1)];
+            const stepTransition = (progress * steps.length) % 1;
+
+            // Draw central nucleus morphing
+            const radius = currentStep.stable ? 35 * scale : (35 + Math.sin(globalTime * 6) * 3) * scale;
+            
+            ctx.beginPath();
+            ctx.arc(0, -30 * scale, radius, 0, Math.PI * 2);
+            ctx.fillStyle = currentStep.color;
+            ctx.globalAlpha = 0.9;
+            ctx.fill();
+
+            // Glow/Stability aura
+            ctx.beginPath();
+            ctx.arc(0, -30 * scale, radius + 10 * scale, 0, Math.PI * 2);
+            ctx.strokeStyle = currentStep.stable ? "#83C167" : currentStep.color;
+            ctx.lineWidth = currentStep.stable ? 3 : 1;
+            ctx.globalAlpha = currentStep.stable ? 0.8 : 0.3;
+            ctx.stroke();
+
+            // Label on nucleus
+            ctx.globalAlpha = 1.0;
+            ctx.fillStyle = "#141414";
+            ctx.textAlign = "center";
+            ctx.font = `bold ${Math.round(20 * scale)}px 'Lora', serif`;
+            ctx.fillText(currentStep.symbol, 0, -22 * scale);
+
+            // Subtitle status below nucleus
+            ctx.fillStyle = currentStep.stable ? "#83C167" : "#e0e0e0";
+            ctx.font = `${Math.round(14 * scale)}px 'Roboto Mono', monospace`;
+            ctx.fillText(currentStep.name + (currentStep.stable ? " (STABLE)" : " (Radioactive)"), 0, 30 * scale);
+
+            // Ejection animation if transitioning and not stable
+            if (!currentStep.stable && stepTransition > 0.2) {
+                const ejProgress = (stepTransition - 0.2) / 0.8;
+                const ejX = ejProgress * 120 * scale;
+                const ejY = -30 * scale - ejProgress * 60 * scale;
+
+                // Ejected Alpha particle dot
+                ctx.beginPath();
+                ctx.arc(ejX, ejY, 8 * scale, 0, Math.PI * 2);
+                ctx.fillStyle = C_ALPHA;
+                ctx.fill();
+
+                ctx.fillStyle = C_ALPHA;
+                ctx.font = "11px 'Roboto Mono', monospace";
+                ctx.fillText("α", ejX, ejY - 12 * scale);
+            }
+
+            // Chain progress dots along bottom
+            const dotSpacing = 30 * scale;
+            const startX = -((steps.length - 1) * dotSpacing) / 2;
+            for (let i = 0; i < steps.length; i++) {
+                const dx = startX + i * dotSpacing;
+                const dy = 70 * scale;
+
+                ctx.beginPath();
+                ctx.arc(dx, dy, i === stageIndex ? 6 * scale : 4 * scale, 0, Math.PI * 2);
+                ctx.fillStyle = i <= stageIndex ? steps[i].color : "rgba(255, 255, 255, 0.2)";
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        function drawDuality(ctx, centerX, centerY, scale, alpha) {
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.globalAlpha = alpha;
+
+            // Central Core
+            const corePulse = Math.sin(globalTime * 4) * 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, 15 * scale + corePulse, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.shadowColor = '#fff';
+            ctx.shadowBlur = 20;
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+
+            // Destructive rays (Left side - chaotic, red)
+            ctx.strokeStyle = '#FC6255';
+            ctx.lineWidth = 2 * scale;
+            for (let i = 0; i < 8; i++) {
+                const angle = Math.PI/2 + (Math.PI / 8) * i + Math.PI/16; 
+                const r1 = 20 * scale + Math.random() * 5;
+                const r2 = 60 * scale + Math.random() * 40 * Math.sin(globalTime * 10 + i);
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(angle)*r1, Math.sin(angle)*r1);
+                ctx.lineTo(Math.cos(angle)*r2, Math.sin(angle)*r2);
+                ctx.stroke();
+            }
+
+            // Healing/Medical paths (Right side - smooth, organized, teal)
+            ctx.strokeStyle = '#58C4DD';
+            ctx.lineWidth = 2 * scale;
+            for (let i = 0; i < 5; i++) {
+                const angle = -Math.PI/2 + (Math.PI / 4) * i;
+                const r1 = 20 * scale;
+                const r2 = 80 * scale;
+                
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(angle)*r1, Math.sin(angle)*r1);
+                
+                const cp1x = Math.cos(angle - 0.5) * (r1 + r2)/2;
+                const cp1y = Math.sin(angle - 0.5) * (r1 + r2)/2;
+                const cp2x = Math.cos(angle + 0.5) * (r1 + r2)/2;
+                const cp2y = Math.sin(angle + 0.5) * (r1 + r2)/2;
+                
+                const wave = Math.sin(globalTime * 3 + i) * 10;
+                
+                ctx.bezierCurveTo(
+                    cp1x + wave, cp1y + wave, 
+                    cp2x - wave, cp2y - wave, 
+                    Math.cos(angle)*r2, Math.sin(angle)*r2
+                );
+                ctx.stroke();
+                
+                if (i % 2 === 0) {
+                    const px = Math.cos(angle)*r2;
+                    const py = Math.sin(angle)*r2;
+                    ctx.fillStyle = '#58C4DD';
+                    ctx.fillRect(px - 6*scale, py - 1.5*scale, 12*scale, 3*scale);
+                    ctx.fillRect(px - 1.5*scale, py - 6*scale, 3*scale, 12*scale);
+                }
+            }
+
+            ctx.restore();
+        }
+
+        function draw() {
+            globalTime += 0.016;
+            
+            ctx.fillStyle = C_BG;
+            ctx.fillRect(0, 0, width, height);
+
+            const isMobile = width < 768;
+            const vizCenterX = isMobile ? width / 2 : width * 0.7;
+            const vizCenterY = isMobile ? height * 0.35 : height / 2;
+            
+            let nucScale = 1.0, nucAlphaSep = 0, nucOpacity = 0;
+            let gridOpacity = 0, graphProgress = 0;
+            let decayChainProgress = 0, decayChainOpacity = 0;
+            let dualityOpacity = 0;
+
+            if (scrollProgress < 0.2) {
+                // Scene 0 & 1
+                nucScale = 1.2; nucAlphaSep = 0; nucOpacity = 1.0;
+            } else if (scrollProgress >= 0.2 && scrollProgress < 0.35) {
+                // Scene 2: Decay
+                const p = (scrollProgress - 0.2) / 0.15;
+                nucScale = 1.2; nucAlphaSep = easeInOutCubic(p); nucOpacity = 1.0;
+            } else if (scrollProgress >= 0.35 && scrollProgress < 0.45) {
+                // Scene 3: Transition to Grid
+                const p = (scrollProgress - 0.35) / 0.10;
+                nucScale = lerp(1.2, 0.1, p); nucAlphaSep = 1.0; nucOpacity = lerp(1.0, 0.0, p);
+                gridOpacity = lerp(0.0, 1.0, p); graphProgress = 0;
+            } else if (scrollProgress >= 0.45 && scrollProgress < 0.65) {
+                // Scene 4 & 5: Grid & Graph
+                gridOpacity = 1.0; graphProgress = (scrollProgress - 0.45) / 0.20;
+            } else if (scrollProgress >= 0.65 && scrollProgress < 0.75) {
+                // Scene 6: Uranium Intro
+                const p = (scrollProgress - 0.65) / 0.10;
+                gridOpacity = lerp(1.0, 0.0, p);
+                decayChainOpacity = p;
+                decayChainProgress = 0;
+            } else if (scrollProgress >= 0.75 && scrollProgress < 0.85) {
+                // Scene 7: Decay Chain to Lead
+                const p = (scrollProgress - 0.75) / 0.10;
+                decayChainOpacity = 1.0;
+                decayChainProgress = p;
+            } else if (scrollProgress >= 0.85 && scrollProgress < 0.92) {
+                // Transition Decay Chain -> Duality
+                const p = (scrollProgress - 0.85) / 0.07;
+                decayChainOpacity = lerp(1.0, 0.0, p);
+                decayChainProgress = 1.0;
+                dualityOpacity = p;
+            } else {
+                // Scene 8: Duality
+                dualityOpacity = 1.0;
+            }
+
+            // Draw layer calls
+            if (nucOpacity > 0.01) drawNucleus(ctx, vizCenterX, vizCenterY, nucScale, nucAlphaSep, nucOpacity);
+
+            if (gridOpacity > 0.01) {
+                ctx.globalAlpha = gridOpacity;
+                const gridX = isMobile ? vizCenterX : vizCenterX + 100;
+                const gridY = isMobile ? height * 0.25 : vizCenterY - 150;
+                drawGrid(ctx, gridX, gridY, isMobile ? 0.6 : 0.8, graphProgress);
+                
+                const padding = 40;
+                const gw = isMobile ? width - padding*2 : 400;
+                const gh = isMobile ? 200 : 300;
+                const gx = isMobile ? padding : vizCenterX - 100;
+                const gy = isMobile ? height * 0.5 : vizCenterY + 50;
+                drawGraph(ctx, {x: gx, y: gy, w: gw, h: gh}, graphProgress);
+                ctx.globalAlpha = 1.0;
+            }
+
+            if (decayChainOpacity > 0.01) {
+                ctx.globalAlpha = decayChainOpacity;
+                drawDecayChain(ctx, vizCenterX, vizCenterY, isMobile ? 0.8 : 1.2, decayChainProgress);
+                ctx.globalAlpha = 1.0;
+            }
+
+            if (dualityOpacity > 0.01) drawDuality(ctx, vizCenterX, vizCenterY, isMobile ? 1.0 : 1.5, dualityOpacity);
+
+            requestAnimationFrame(draw);
+        }
+
+        // Boot
+        resize();
+        initParticles();
+        updateScroll();
+        draw();
+
+    </script>
+</body>
+</html>
