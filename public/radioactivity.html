@@ -47,6 +47,12 @@
             pointer-events: none; /* Let clicks pass through to content */
         }
 
+        #viz {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
         #scroll-content {
             position: relative;
             z-index: 10;
@@ -221,7 +227,7 @@
          * 3B1B Style Canvas Scrollytelling
          */
         const canvas = document.getElementById('viz');
-        const ctx = canvas.getContext('2d', { alpha: false });
+        const ctx = canvas.getContext('2d'); // Removed alpha:false for broader hardware compatibility
         let width, height;
 
         // Colors
@@ -259,6 +265,11 @@
             width = window.innerWidth;
             height = window.innerHeight;
             const dpr = window.devicePixelRatio || 1;
+            
+            // Strictly enforce CSS size so retina displays don't push the canvas off-screen
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            
             canvas.width = width * dpr;
             canvas.height = height * dpr;
             ctx.scale(dpr, dpr);
@@ -330,7 +341,8 @@
 
         // Scroll Tracking
         function updateScroll() {
-            const maxScroll = document.body.scrollHeight - window.innerHeight;
+            // Prevent division by zero if the DOM isn't fully expanded
+            const maxScroll = Math.max(1, document.body.scrollHeight - window.innerHeight);
             scrollProgress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
 
             const steps = document.querySelectorAll('.step');
@@ -725,6 +737,7 @@
                 gridOpacity = lerp(1.0, 0.0, p);
                 decayChainOpacity = p;
                 decayChainProgress = 0;
+                graphProgress = 1.0; // Keep graph fully drawn while it fades out
             } else if (scrollProgress >= 0.75 && scrollProgress < 0.85) {
                 // Scene 7: Decay Chain to Lead
                 const p = (scrollProgress - 0.75) / 0.10;
@@ -770,11 +783,19 @@
             requestAnimationFrame(draw);
         }
 
-        // Boot
-        resize();
-        initParticles();
-        updateScroll();
-        draw();
+        // Boot securely without relying on window.onload which fails in cached or iframe environments
+        function startVisualization() {
+            resize();
+            initParticles();
+            updateScroll();
+            draw(); // Start the loop immediately
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startVisualization);
+        } else {
+            startVisualization();
+        }
 
     </script>
 </body>
