@@ -4,6 +4,7 @@ import Home from './Home';
 import KineticMatrix from './KineticMatrix';
 import Percentages from './Percentages';
 import ProbabilityQuest from './birthday-paradox';
+import CurrencyExchange from './CurrencyExchange';
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/kinetic-matrix" element={<KineticMatrix />} />
         <Route path="/percentages" element={<Percentages />} />
         <Route path="/probability" element={<ProbabilityQuest />} />
+        <Route path="/currency" element={<CurrencyExchange />} />
       </Routes>
     </BrowserRouter>
   );
